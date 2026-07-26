@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 struct Tracer {
     std::string name;
@@ -23,26 +24,38 @@ struct Tracer {
     }
 };
 
+// Exp 2
 // void by_value(Tracer t) {
 //     std::cout << "  inside by_value\n";
 // }
-
 // void by_ref(const Tracer& t) {
 //     std::cout << "  inside by_ref\n";
 // }
 
+// Exp3
+// Tracer make() {
+//     Tracer t("A");
+//     return t;
+// }
 
-Tracer make() {
-    Tracer t("A");
-    return t;
-}
-
-int main() {
+// int main() {
+    // exp2
     // Tracer a("A");
     // std::cout << "--- by value ---\n";
     // by_value(a);
     // std::cout << "--- by ref ---\n";
     // by_ref(a);
 
-    Tracer a = make();
+    // Exp3 
+    // Tracer a = make();
+// }
+
+int main() {
+    std::cout << "--- without reserve ---\n";
+    std::vector<Tracer> v;
+    v.reserve(3);
+    v.push_back(Tracer("A"));
+    v.push_back(Tracer("B"));
+    v.push_back(Tracer("C"));
+    std::cout << "--- done ---\n";
 }
