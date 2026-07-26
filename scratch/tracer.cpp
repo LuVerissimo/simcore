@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 struct Tracer {
     std::string name;
@@ -23,6 +24,29 @@ struct Tracer {
         std::cout << "[DTOR] " << name << "\n";
     }
 };
+
+// Experiment 5
+int main() {
+    try {
+        Tracer a("A");
+        Tracer b("B");
+        throw std::runtime_error("boom");
+    } catch (...) {
+        std::cout << "caught\n";
+    }
+}
+
+// Experiment 4
+// int main() {
+//     std::cout << "--- without reserve ---\n";
+//     std::vector<Tracer> v;
+//     v.reserve(3);
+//     v.push_back(Tracer("A"));
+//     v.push_back(Tracer("B"));
+//     v.push_back(Tracer("C"));
+//     std::cout << "--- done ---\n";
+// }
+
 
 // Exp 2
 // void by_value(Tracer t) {
@@ -49,13 +73,3 @@ struct Tracer {
     // Exp3 
     // Tracer a = make();
 // }
-
-int main() {
-    std::cout << "--- without reserve ---\n";
-    std::vector<Tracer> v;
-    v.reserve(3);
-    v.push_back(Tracer("A"));
-    v.push_back(Tracer("B"));
-    v.push_back(Tracer("C"));
-    std::cout << "--- done ---\n";
-}
