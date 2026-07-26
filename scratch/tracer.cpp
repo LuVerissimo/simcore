@@ -23,18 +23,26 @@ struct Tracer {
     }
 };
 
-void by_value(Tracer t) {
-    std::cout << "  inside by_value\n";
-}
+// void by_value(Tracer t) {
+//     std::cout << "  inside by_value\n";
+// }
 
-void by_ref(const Tracer& t) {
-    std::cout << "  inside by_ref\n";
+// void by_ref(const Tracer& t) {
+//     std::cout << "  inside by_ref\n";
+// }
+
+
+Tracer make() {
+    Tracer t("A");
+    return t;
 }
 
 int main() {
-    Tracer a("A");
-    std::cout << "--- by value ---\n";
-    by_value(a);
-    std::cout << "--- by ref ---\n";
-    by_ref(a);
+    // Tracer a("A");
+    // std::cout << "--- by value ---\n";
+    // by_value(a);
+    // std::cout << "--- by ref ---\n";
+    // by_ref(a);
+
+    Tracer a = make();
 }
