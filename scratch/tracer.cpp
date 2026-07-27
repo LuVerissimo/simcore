@@ -25,16 +25,16 @@ struct Tracer {
     }
 };
 
-// Experiment 5
-int main() {
-    try {
-        Tracer a("A");
-        Tracer b("B");
-        throw std::runtime_error("boom");
-    } catch (...) {
-        std::cout << "caught\n";
-    }
-}
+// // Experiment 5
+// int main() {
+//     try {
+//         Tracer a("A");
+//         Tracer b("B");
+//         throw std::runtime_error("boom");
+//     } catch (...) {
+//         std::cout << "caught\n";
+//     }
+// }
 
 // Experiment 4
 // int main() {
