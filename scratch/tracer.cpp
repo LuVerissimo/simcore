@@ -23,6 +23,18 @@ struct Tracer {
     ~Tracer() {
         std::cout << "[DTOR] " << name << "\n";
     }
+
+
+    //Semantics
+    Tracer(Tracer&& other) noexcept : name(std::move(other.name)) {
+        std::cout << "[MOVE] " << name << "\n";
+    }
+    
+    Tracer& operator=(Tracer&& other) noexcept {
+        name = std::move(other.name);
+        std::cout << "[MOVE=] " << name << "\n";
+        return *this;
+    }
 };
 
 // // Experiment 5
@@ -37,15 +49,15 @@ struct Tracer {
 // }
 
 // Experiment 4
-// int main() {
-//     std::cout << "--- without reserve ---\n";
-//     std::vector<Tracer> v;
-//     v.reserve(3);
-//     v.push_back(Tracer("A"));
-//     v.push_back(Tracer("B"));
-//     v.push_back(Tracer("C"));
-//     std::cout << "--- done ---\n";
-// }
+int main() {
+    std::cout << "--- without reserve ---\n";
+    std::vector<Tracer> v;
+    v.reserve(3);
+    v.push_back(Tracer("A"));
+    v.push_back(Tracer("B"));
+    v.push_back(Tracer("C"));
+    std::cout << "--- done ---\n";
+}
 
 
 // Exp 2
