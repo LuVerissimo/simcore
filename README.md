@@ -12,8 +12,8 @@ for Georgia Tech OMSCS (Computing Systems specialization, Spring 2027).
 |------|-------|---------|--------|
 | 1 | Linear algebra as geometry · C++ object model | `vec3`/`mat3` library | done |
 | 2 | Rotations, SO(3), quaternions · RAII & lifetime | `quat` + attitude toolkit | done |
-| 3 | Jacobians · move semantics, smart pointers | numerical differentiation | in progress |
-| 4 | ODE integration · templates & concepts | integrator suite | — |
+| 3 | Jacobians · move semantics, smart pointers | numerical differentiation | done |
+| 4 | ODE integration · templates & concepts | integrator suite | in progress |
 | 5 | Linear solvers · STL internals | CSR sparse matrix + CG | — |
 | 6 | PDEs & stability · memory hierarchy | cache-blocked heat solver | — |
 | 7 | Probability for estimation · threads | MT Monte Carlo | — |
@@ -48,3 +48,7 @@ Results:
 Quat: 4.0181 ms, norm drift: 1
 1.0000000000428428
 Mat3: 3.0337000000000001 ms, trace: 2.124758152590263
+
+
+**Week 3 — Numerical vs Analytic Jacobian (2-link arm):**
+Central-difference Jacobian matches analytic to ~1e-7. Singularity confirmed at θ₂ = 0 (det(J) ≈ 0 — arm fully extended, end-effector loses one DOF).
