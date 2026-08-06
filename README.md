@@ -52,3 +52,6 @@ Mat3: 3.0337000000000001 ms, trace: 2.124758152590263
 
 **Week 3 — Numerical vs Analytic Jacobian (2-link arm):**
 Central-difference Jacobian matches analytic to ~1e-7. Singularity confirmed at θ₂ = 0 (det(J) ≈ 0 — arm fully extended, end-effector loses one DOF).
+
+**Week 4 — Integrator Energy Drift (spring-mass, dt=0.01, 1000 steps):**
+Explicit Euler gains energy (+10.5%), Semi-implicit Euler oscillates (−0.5%), RK4 conserves to display precision. Semi-implicit is the physics-engine sweet spot: Euler's cost, bounded energy error.
