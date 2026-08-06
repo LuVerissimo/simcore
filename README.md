@@ -13,8 +13,8 @@ for Georgia Tech OMSCS (Computing Systems specialization, Spring 2027).
 | 1 | Linear algebra as geometry · C++ object model | `vec3`/`mat3` library | done |
 | 2 | Rotations, SO(3), quaternions · RAII & lifetime | `quat` + attitude toolkit | done |
 | 3 | Jacobians · move semantics, smart pointers | numerical differentiation | done |
-| 4 | ODE integration · templates & concepts | integrator suite | in progress |
-| 5 | Linear solvers · STL internals | CSR sparse matrix + CG | — |
+| 4 | ODE integration · templates & concepts | integrator suite | done |
+| 5 | Linear solvers · STL internals | CSR sparse matrix + CG | in progress |
 | 6 | PDEs & stability · memory hierarchy | cache-blocked heat solver | — |
 | 7 | Probability for estimation · threads | MT Monte Carlo | — |
 | 8 | Kalman filter · atomics & memory model | lock-free KF tracker | — |
