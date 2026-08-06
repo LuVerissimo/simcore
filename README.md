@@ -1,7 +1,7 @@
 # simcore
 
 Self-directed HPC & simulation bootcamp: applied math + modern C++, in preparation
-for Georgia Tech OMSCS (Computing Systems specialization, Spring 2027).
+for Georgia Tech MSCS (Computing Systems).
 
 **Cadence:** math derivations → C++ experiments → weekly mini-project, with CI
 (build + tests under ASan/UBSan) on every push.
