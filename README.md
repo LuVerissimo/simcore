@@ -55,3 +55,6 @@ Central-difference Jacobian matches analytic to ~1e-7. Singularity confirmed at 
 
 **Week 4 — Integrator Energy Drift (spring-mass, dt=0.01, 1000 steps):**
 Explicit Euler gains energy (+10.5%), Semi-implicit Euler oscillates (−0.5%), RK4 conserves to display precision. Semi-implicit is the physics-engine sweet spot: Euler's cost, bounded energy error.
+
+
+**Week 5 —
