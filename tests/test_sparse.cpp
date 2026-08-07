@@ -15,3 +15,16 @@ TEST_CASE("identity mat3 in CSR") {
     std::vector<double> z = {2,3,4};
     CHECK(approx_equal(y, z));
 }
+
+TEST_CASE("2x2 SPD system that I solved by hand") {
+    SparseMatrix A(2, 2);
+    A.values = {2, 1, 1, 3};
+    A.col_idx = {0, 1, 0, 1};
+    A.row_ptr = {0, 2, 4};
+
+    std::vector<double> b = {1, 2};
+    std::vector<double> x0 = {0, 0};
+    auto x = solve_cg(A, b, x0);
+
+    CHECK(approx_equal(x, {0.2, 0.6}));
+}
