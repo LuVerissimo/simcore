@@ -1,5 +1,6 @@
 #pragma once
 #include "math/vec3.hpp"
+#include <cmath>
 #include <vector>
 #include <cassert>
 
@@ -18,7 +19,6 @@ struct SparseMatrix {
         std::vector<int>& tri_col,
         std::vector<double>& tri_val
     );
-
 };
 
 [[nodiscard]] inline std::vector<double> spmv(const SparseMatrix& A, const std::vector<double>& x) {
@@ -45,3 +45,47 @@ struct SparseMatrix {
     return true;
 }
 
+// y = a + scalar * b
+[[nodiscard]] inline std::vector<double> axpy(
+    double scalar, const std::vector<double>& x,
+    const std::vector<double>& y
+) {
+    std::vector<double> r(x.size());
+    for (size_t i = 0; i < x.size(); ++i) r[i] = y[i] + scalar * x[i];
+    return r;
+}
+
+[[nodiscard]] inline double dot(
+    const std::vector<double>& a, 
+    const std::vector<double>& b
+) {
+    double s = 0;
+    for (size_t i = 0; i < a.size(); ++i) s += a[i] * b[i];
+    return s;
+}
+
+[[nodiscard]] inline std::vector<double> solve_cg(
+    const SparseMatrix& A,
+    const std::vector<double>& b,
+    std::vector<double> x,
+    double tol = 1e-10,
+    int max_iter = 1000
+) {
+    auto r = axpy(-1.0, spmv(A, x), b);
+    auto p = r;
+    for (auto k = 0; k < max_iter; ++k) {
+      auto Ap = spmv(A,p);
+      double rr = dot(r, r);
+      auto alpha = rr / dot(p, Ap);
+
+      x = axpy(alpha, p, x);
+      auto r_new = axpy(-alpha, Ap, r);
+
+      if (sqrt(dot(r_new,r_new)) < tol) break;
+
+      auto beta = dot(r_new,r_new) / rr;
+      p = axpy(beta, p,r_new);
+      r = r_new;
+    }
+    return x;
+}
