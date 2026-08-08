@@ -1,6 +1,7 @@
 #pragma once
 #include "math/vec3.hpp"
 #include <cmath>
+#include <iostream>
 #include <vector>
 #include <cassert>
 
@@ -81,6 +82,7 @@ struct SparseMatrix {
       x = axpy(alpha, p, x);
       auto r_new = axpy(-alpha, Ap, r);
 
+      std::cout << "CG iterations: " << k << "\n";
       if (sqrt(dot(r_new,r_new)) < tol) break;
 
       auto beta = dot(r_new,r_new) / rr;

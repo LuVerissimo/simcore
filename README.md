@@ -14,8 +14,8 @@ for Georgia Tech MSCS (Computing Systems).
 | 2 | Rotations, SO(3), quaternions · RAII & lifetime | `quat` + attitude toolkit | done |
 | 3 | Jacobians · move semantics, smart pointers | numerical differentiation | done |
 | 4 | ODE integration · templates & concepts | integrator suite | done |
-| 5 | Linear solvers · STL internals | CSR sparse matrix + CG | in progress |
-| 6 | PDEs & stability · memory hierarchy | cache-blocked heat solver | — |
+| 5 | Linear solvers · STL internals | CSR sparse matrix + CG | done |
+| 6 | PDEs & stability · memory hierarchy | cache-blocked heat solver | in progress |
 | 7 | Probability for estimation · threads | MT Monte Carlo | — |
 | 8 | Kalman filter · atomics & memory model | lock-free KF tracker | — |
 | 9 | EKF/UKF · thread pools | EKF localization | — |
@@ -57,4 +57,5 @@ Central-difference Jacobian matches analytic to ~1e-7. Singularity confirmed at 
 Explicit Euler gains energy (+10.5%), Semi-implicit Euler oscillates (−0.5%), RK4 conserves to display precision. Semi-implicit is the physics-engine sweet spot: Euler's cost, bounded energy error.
 
 
-**Week 5 —
+**Week 5 — CG Solver on 2D Laplace:**
+CG iteration count grows linearly with grid size N (proportional to √κ). Preconditioners (not implemented) would flatten this.
