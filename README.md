@@ -59,3 +59,7 @@ Explicit Euler gains energy (+10.5%), Semi-implicit Euler oscillates (−0.5%), 
 
 **Week 5 — CG Solver on 2D Laplace:**
 CG iteration count grows linearly with grid size N (proportional to √κ). Preconditioners (not implemented) would flatten this.
+
+**Week 6 — 2D Heat Equation (N=1000, 100 steps, r=0.24):**
+Three implementations (naive vector<vector>, flat array, cache-blocked) all produce identical results.
+Stability bound dt ≤ dx²/(4α) confirmed empirically: r=0.24 stable, r=0.26 explodes.
