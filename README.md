@@ -53,6 +53,7 @@ Mat3: 3.0337000000000001 ms, trace: 2.124758152590263
 **Week 3 — Numerical vs Analytic Jacobian (2-link arm):**
 Central-difference Jacobian matches analytic to ~1e-7. Singularity confirmed at θ₂ = 0 (det(J) ≈ 0 — arm fully extended, end-effector loses one DOF).
 
+
 **Week 4 — Integrator Energy Drift (spring-mass, dt=0.01, 1000 steps):**
 Explicit Euler gains energy (+10.5%), Semi-implicit Euler oscillates (−0.5%), RK4 conserves to display precision. Semi-implicit is the physics-engine sweet spot: Euler's cost, bounded energy error.
 
@@ -60,6 +61,12 @@ Explicit Euler gains energy (+10.5%), Semi-implicit Euler oscillates (−0.5%), 
 **Week 5 — CG Solver on 2D Laplace:**
 CG iteration count grows linearly with grid size N (proportional to √κ). Preconditioners (not implemented) would flatten this.
 
+
 **Week 6 — 2D Heat Equation (N=1000, 100 steps, r=0.24):**
 Three implementations (naive vector<vector>, flat array, cache-blocked) all produce identical results.
 Stability bound dt ≤ dx²/(4α) confirmed empirically: r=0.24 stable, r=0.26 explodes.
+
+
+**Week 7 — Multithreaded Monte Carlo (10M samples, 2-link arm):**
+Shared mutex: 5× slower than single-threaded (contention). Per-thread accumulators: near-linear speedup.
+At σ=0.1 empirical covariance matches J·Σ·Jᵀ; at σ=0.5 linearization breaks down — motivates nonlinear estimation (EKF).
