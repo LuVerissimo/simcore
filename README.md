@@ -15,10 +15,10 @@ for Georgia Tech MSCS (Computing Systems).
 | 3 | Jacobians · move semantics, smart pointers | numerical differentiation | done |
 | 4 | ODE integration · templates & concepts | integrator suite | done |
 | 5 | Linear solvers · STL internals | CSR sparse matrix + CG | done |
-| 6 | PDEs & stability · memory hierarchy | cache-blocked heat solver | in progress |
-| 7 | Probability for estimation · threads | MT Monte Carlo | — |
-| 8 | Kalman filter · atomics & memory model | lock-free KF tracker | — |
-| 9 | EKF/UKF · thread pools | EKF localization | — |
+| 6 | PDEs & stability · memory hierarchy | cache-blocked heat solver | done |
+| 7 | Probability for estimation · threads | MT Monte Carlo | done |
+| 8 | Kalman filter · atomics & memory model | lock-free KF tracker | done |
+| 9 | EKF/UKF · thread pools | EKF localization | in progress |
 | 10 | Nonlinear least squares · SIMD | AVX kernels + Gauss-Newton | — |
 | 11 | Rigid body dynamics · profiling & allocators | rigid-body sim core | — |
 | 12 | Capstone | `microphys` engine + live EKF | — |
@@ -70,3 +70,8 @@ Stability bound dt ≤ dx²/(4α) confirmed empirically: r=0.24 stable, r=0.26 e
 **Week 7 — Multithreaded Monte Carlo (10M samples, 2-link arm):**
 Shared mutex: 5× slower than single-threaded (contention). Per-thread accumulators: near-linear speedup.
 At σ=0.1 empirical covariance matches J·Σ·Jᵀ; at σ=0.5 linearization breaks down — motivates nonlinear estimation (EKF).
+
+
+**Week 8 — Kalman Tracker (constant velocity, 500 steps, dt=0.01):**
+Sensor thread → SPSC lock-free queue → estimator thread. No mutex on the hot path.
+Filter converges from zero initial guess within ~50 steps. Final estimate error < 0.1 at t=5s.
