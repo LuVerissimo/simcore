@@ -16,7 +16,6 @@ struct Mat4 {
 struct Vec4 { double v[4]{}; double& operator[](int i) { return v[i]; } double operator[](int i) const { return v[i]; } };
 struct Vec2 { double x, y; };
 
-// Matrix ops you'll need — implement these:
 Vec4 mat4_vec4(const Mat4& A, const Vec4& vec){
     return Vec4 {
         A(0,0) * vec[0] + A(0,1) * vec[1] + A(0,2) * vec[2] + A(0,3) * vec[3],
@@ -41,7 +40,6 @@ Mat4 mat4_mat4(const Mat4& A, const Mat4& B){
 }
 
 Mat4 transpose4(const Mat4& A) { 
-    // Uses normal constructor arguments or a flat array constructor
     return {{
         {A(0,0), A(1,0), A(2,0), A(3,0)},
         {A(0,1), A(1,1), A(2,1), A(3,1)},
@@ -144,15 +142,42 @@ void estimator(SPSCQueue<Measurement, 1024>& q, int n_steps, double dt) {
         while (!q.pop(m)) {}  // spin until data
 
         // state/covariance predictions
-        // x = F * x
+        x = mat4_vec4(F, x);
         // P = F * P * Fᵀ + Q
+        auto P_pred = add4(mat4_mat4(mat4_mat4(F, P), transpose4(F)), Q);
 
         // --- UPDATE ---
-        // y = z - H * x         (innovation)
-        // K = P * Hᵀ * S⁻¹      (4×2, but you can do it column by column) K gain'
-        // auto K = (mat4_mat4(P_covar, transpose4(H)), inv2x2(S_i_covar));
-        // x = x + K * y         
+        Vec2 y(m.px - x[0], m.py -x[1]);
+
+        auto S_full = add4(mat4_mat4(mat4_mat4(H, P_pred), transpose4(H)), R);
+        double s00 = S_full(0,0), s01 = S_full(0,1), s10 = S_full(1,0), s11 = S_full(1,1);
+        double si00, si01, si10, si11;
+
+        inv2x2(s00, s01, s10, s11, si00, si01, si11, si11);
+        
+        double K[4][2];
+        for (int j = 0; j < 4; ++j) {
+            double ph0 = P_pred(j,0);
+            double ph1 = P_pred(j,1);
+            K[j][0] = ph0 * si00 + ph1 * si10;
+            K[j][1] = ph0 * si01 + ph1 * si11;
+        
+        }
+        for (int j = 0; j < 4; ++j) {
+            x[j] = x[j] + K[j][0] * y.x + K[j][1] * y.y;
+        }
+        
+        // x = x + K * y
+        Mat4 I{};
+        I(0, 0) = I(1,1) = I(2,2) = I(3,3) = 1.0;
+        
+        Mat4 KH{};
+        for (int j = 0; j < 4; ++j) {
+            KH(j,0) = K[j][0];
+            KH(j,1) = K[j][1];
+        }         
         // P = (I - K*H) * P
+        P = mat4_mat4(sub4(I, KH), P_pred);
 
         // Log
         log << m.t << "," << true_px << "," << true_py << ","
