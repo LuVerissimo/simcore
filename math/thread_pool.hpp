@@ -51,5 +51,6 @@ public:
     ~ThreadPool() {
         for (auto& w : workers) w.request_stop();
         cv.notify_all();
+        for (auto& w : workers) w.join();
     }
 };
