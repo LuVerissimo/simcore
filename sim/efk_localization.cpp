@@ -1,4 +1,5 @@
 #include <cmath>
+#include <utility>
 #include "math/thread_pool.hpp"
 
 // Unicycle Dynamics
@@ -54,15 +55,38 @@ Mat3 sub3(const Mat3& A, const Mat3& B) {
     }};
 };
 
-// For 2×2 inverse (innovation covariance S is 2×2)
-void inv2x2(double a, double b, double c, double d,
-            double& ai, double& bi, double& ci, double& di) {
-    double det = a*d - b*c;
-    ai = d/det; bi = -b/det; ci = -c/det; di = a/det;
+void P_Ht(const Mat3& P, const double H[2][3], double out[3][2]) {
+    for (int i = 0; i < 3; ++i){
+        for (int j = 0; j < 2; ++j) {
+            out[i][j] = 0;
+            for (int k = 0; k < 3; ++k) {
+                out[i][j] += P(i, k) * H[j][k];
+            }
+        } 
+    }
+}
+
+void H_P_Ht(const double H[2][3], const Mat3& P, double out[2][2]) {
+    double PHt[3][2];
+    P_Ht(P, H, PHt);
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            out[i][j] = 0;
+            for (int k = 0; k < 3; ++k) {
+                out[i][j] += H[i][k] * PHt[k][j];
+            }
+        }
+    }
+}
+
+double wrap_angle(double a) {
+    while (a > M_PI) a -= 2 * M_PI;
+    while (a < -M_PI) a += 2 * M_PI;
+    return a;
 }
 
 
-State propogate(State s, Control u, double dt) {
+State propagate(State s, Control u, double dt) {
     return {
         s.x + u.v * std::cos(s.theta) * dt,
         s.y + u.v * std::sin(s.theta) * dt,
@@ -72,20 +96,17 @@ State propogate(State s, Control u, double dt) {
 
 Meas measure(State s, Landmark lm) {
     double dx = lm.lx - s.x, dy = lm.ly - s.y;
-    return {sqrt(dx*dx + dy*dy), atan2(dx, dy) - s.theta};
+    return {std::sqrt(dx*dx + dy*dy), std::atan2(dy, dx) - s.theta};  // dy first
 }
 
 
-void measure_jacobians(State s, Meas m, Landmark lm, Control u, double dt) {
-    double F[3][3] = {};
+void measure_jacobians(State s, Meas m, Landmark lm, Control u, double dt, double(&F)[3][3], double (&H)[2][3]) {
     F[0][0] = F[1][1] = F[2][2] = 1;
     F[0][2] = -u.v * std::sin(s.theta) * dt;
-    F[0][2] = -u.v * std::sin(s.theta) * dt;
+    F[1][2] = u.v * std::cos(s.theta) * dt;
     
-    double H[2][3] = {};
     double dx = lm.lx - s.x, dy = lm.ly - s.y;
     H[0][2] = 0, H[1][2] = -1;
     H[0][0] = - dx/m.range, H[0][1] = -dy/m.range;
     H[1][0] = dy/(m.range * m.range), H[1][1] = -dx/(m.range * m.range);
 }
-
