@@ -1,5 +1,5 @@
 #include <cmath>
-#include <utility>
+#include <random>
 #include "math/thread_pool.hpp"
 
 // Unicycle Dynamics
@@ -13,6 +13,11 @@ struct Meas { double range, bearing; };
 // EKF predict + update 
 struct Mat3 {
     double m[3][3]{};
+    double& operator()(int r, int c) { return m[r][c]; }
+    double  operator()(int r, int c) const { return m[r][c]; }
+};
+struct Mat2_3 {
+    double m[2][3]{};
     double& operator()(int r, int c) { return m[r][c]; }
     double  operator()(int r, int c) const { return m[r][c]; }
 };
@@ -99,14 +104,57 @@ Meas measure(State s, Landmark lm) {
     return {std::sqrt(dx*dx + dy*dy), std::atan2(dy, dx) - s.theta};  // dy first
 }
 
-
-void measure_jacobians(State s, Meas m, Landmark lm, Control u, double dt, double(&F)[3][3], double (&H)[2][3]) {
-    F[0][0] = F[1][1] = F[2][2] = 1;
-    F[0][2] = -u.v * std::sin(s.theta) * dt;
-    F[1][2] = u.v * std::cos(s.theta) * dt;
+void jacobians(State s, Meas m, Landmark lm, Control u, double dt, Mat3 F, Mat2_3 H) {
+    F(0,0) = F(1,1) = F(2,2) = 1;
+    F(0,2) = -u.v * std::sin(s.theta) * dt;
+    F(1,2) = u.v * std::cos(s.theta) * dt;
     
     double dx = lm.lx - s.x, dy = lm.ly - s.y;
-    H[0][2] = 0, H[1][2] = -1;
-    H[0][0] = - dx/m.range, H[0][1] = -dy/m.range;
-    H[1][0] = dy/(m.range * m.range), H[1][1] = -dx/(m.range * m.range);
+    H(0,2)= 0, H(1,2) = -1;
+    H(0,0) = - dx/m.range, H(0,1 )= -dy/m.range;
+    H(1,0) = dy/(m.range * m.range), H(1,1) = -dx/(m.range * m.range);
+}
+
+int main() {
+    const int N = 500;
+    const double dt = 0.1;
+    Control u{1.0,0.3}; //drive in a curve
+
+    // 4 landmarks
+    Landmark landmarks[] = {{5,5},{-5,5},{-5,-5},{5,-5}};
+
+    State truth{0,0,0};
+
+    State est{2,2,0.5}; //crappy initial guess
+    Mat3 P{};
+    P(0,0) = P(1,1) = P(2,2) = 1;
+
+    Mat3 Q{};
+    Q(0,0) = Q(1,1) = 0.001;
+
+    double R[2][2] = {{0.1,0},{0,0.05}}; //range noise, bearing noise
+
+    std::mt19937 gen(42);
+    std::normal_distribution<double> noise_r(0, sqrt(0.1));
+    std::normal_distribution<double> noise_b(0, sqrt(0.05));
+
+    for (int i = 0; i < N; ++i) {
+        truth = propagate(truth, u, dt);
+
+
+        // Predict
+        est = propagate(est, u, dt);
+        Mat3 F {};
+        Mat2_3 H {};
+        auto meas = measure(est, landmarks[i]);
+
+        jacobians(est, meas, landmarks[i], u, dt, F, H);
+        transpose3(F);
+        auto P_pred = add3((mat3_mat3(mat3_mat3(F, P), transpose3(F))),Q);
+
+        // Update (once per landmark)
+        for (auto& lm : landmarks) {
+
+        }
+    }
 }
