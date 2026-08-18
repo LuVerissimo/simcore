@@ -18,8 +18,8 @@ for Georgia Tech MSCS (Computing Systems).
 | 6 | PDEs & stability · memory hierarchy | cache-blocked heat solver | done |
 | 7 | Probability for estimation · threads | MT Monte Carlo | done |
 | 8 | Kalman filter · atomics & memory model | lock-free KF tracker | done |
-| 9 | EKF/UKF · thread pools | EKF localization | in progress |
-| 10 | Nonlinear least squares · SIMD | AVX kernels + Gauss-Newton | — |
+| 9 | EKF/UKF · thread pools | EKF localization | done |
+| 10 | Nonlinear least squares · SIMD | AVX kernels + Gauss-Newton | in progress |
 | 11 | Rigid body dynamics · profiling & allocators | rigid-body sim core | — |
 | 12 | Capstone | `microphys` engine + live EKF | — |
 
@@ -75,3 +75,7 @@ At σ=0.1 empirical covariance matches J·Σ·Jᵀ; at σ=0.5 linearization brea
 **Week 8 — Kalman Tracker (constant velocity, 500 steps, dt=0.01):**
 Sensor thread → SPSC lock-free queue → estimator thread. No mutex on the hot path.
 Filter converges from zero initial guess within ~50 steps. Final estimate error < 0.1 at t=5s.
+
+
+**Week 9 — EKF Localization (unicycle, 4 landmarks, 500 steps):**
+Converges from 2m position error + 0.5 rad heading error within ~50 steps. Final error < 0.07m position, < 0.01 rad heading. 10× R increase has minimal impact with 4 landmarks.
