@@ -79,3 +79,6 @@ Filter converges from zero initial guess within ~50 steps. Final estimate error 
 
 **Week 9 — EKF Localization (unicycle, 4 landmarks, 500 steps):**
 Converges from 2m position error + 0.5 rad heading error within ~50 steps. Final error < 0.07m position, < 0.01 rad heading. 10× R increase has minimal impact with 4 landmarks.
+
+**Week 10 — SIMD Dot Product (AVX2 FMA):**
+N=1024 (L1-resident): 4.6× speedup. N=1M (memory-bound): 2× speedup. SIMD gains are real but capped by memory bandwidth at scale.
