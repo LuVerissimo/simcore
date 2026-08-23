@@ -86,3 +86,7 @@ Converges from 2m position error + 0.5 rad heading error within ~50 steps. Final
 
 *— SIMD + Gauss-Newton:*
 AVX2 dot product: 4.6× at L1-resident sizes, 2× at 1M. GN with LM damping converges from (3, 0.5, 0.5) to (4.99, 0.30, 0.98) in 20 iterations against ground truth (5, 0.3, 1). Residual noise floor at σ²M/2.
+
+
+**Week 11 — Arena vs new/delete (100K contacts × 100 frames):**
+pmr arena: 6× faster than std::vector with default allocator. Zero fragmentation, one reset per frame.
