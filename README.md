@@ -20,8 +20,8 @@ for Georgia Tech MSCS (Computing Systems).
 | 8 | Kalman filter · atomics & memory model | lock-free KF tracker | done |
 | 9 | EKF/UKF · thread pools | EKF localization | done |
 | 10 | Nonlinear least squares · SIMD | AVX kernels + Gauss-Newton | done |
-| 11 | Rigid body dynamics · profiling & allocators | rigid-body sim core | in progress |
-| 12 | Capstone | `microphys` engine + live EKF | — |
+| 11 | Rigid body dynamics · profiling & allocators | rigid-body sim core | done |
+| 12 | Capstone | `microphys` engine + live EKF | done |
 
 ## Layout
 ```
