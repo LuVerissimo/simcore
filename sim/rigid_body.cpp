@@ -19,7 +19,7 @@ int main() {
     Body b;
     b.pos = {0,0.5,0};
     b.vel = {2,0,0};
-    b.omega = {0,0,0};
+    b.omega = {1.0,2.0,0.5};
     b.ori = {1,0,0,0};
     b.mass = 1.0;
     b.radius = 0.5;
@@ -38,7 +38,10 @@ int main() {
     double e = 0.8; //restituion
     int steps = 20'000; //20 secs
 
-    // double normed_orientation;
+
+    auto kinetic = [](const Body& b) { return 0.5 * b.mass * norm_squared(b.vel); };
+    auto potential = [&](const Body& b) {return b.mass * b.pos.y * gravity.y; };
+    double E0 = kinetic(b) + potential(b) + kinetic(b2) + potential(b2);
     
     for (int i = 0; i < steps; ++i) {
         //semi-implicit euler
@@ -46,8 +49,9 @@ int main() {
         quat omega_q{0, b.omega.x, b.omega.y, b.omega.z};
 
         b.ori = b.ori + (omega_q * b.ori) * 0.5 * dt;
+        b.ori = normalized(b.ori);
+        
         b.pos += b.vel * dt;
-        // normed_orientation = norm(b.ori);
         
         if (b.pos.y < b.radius) {
             b.pos.y = b.radius;
@@ -61,9 +65,14 @@ int main() {
             b2.vel.y = -e * b2.vel.y;
         }
 
+        double E = kinetic(b) + potential(b) + kinetic(b2) + potential(b2);
+
         if (i % 1000 == 0) std::cout << "t=" << i*dt << 
                                " b1.x=" << b.pos.x << " b1.y=" << b.pos.y <<
-                               " b2.x=" << b2.pos.x << " b2.y=" << b2.pos.y << "\n";
+                               " b2.x=" << b2.pos.x << " b2.y=" << b2.pos.y <<
+                               " E=" << E << " E0=" << E0 <<
+                               " q_norm=" << norm(b.ori) << "\n";
+                               
         vec3 diff = b.pos - b2.pos;
         double dist = norm(diff);
 
