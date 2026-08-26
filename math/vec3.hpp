@@ -1,70 +1,132 @@
 #pragma once
-
 #include <cassert>
+#include <cmath>
+#include <type_traits>
 
-constexpr float cabs(float x) { return x < 0.0 ? -x : x; }
+// 1. Generic absolute value helper
+template <typename T>
+[[nodiscard]] constexpr T cabs(T x) {
+    return x < T(0) ? -x : x;
+}
 
-constexpr float PI = 3.14159265358979323846;
+// 2. Precision-aware Pi constant templates
+template <typename T>
+constexpr T PI_v = T(3.141592653589793238462643383279502884L);
 
-struct vec3 {
-    float x{0.0}, y{0.0}, z{0.0};
+constexpr double PI = PI_v<double>;
+constexpr float PIf = PI_v<float>;
 
-    constexpr vec3& operator+=(vec3 v) { x += v.x; y += v.y; z += v.z; return *this; }
-    constexpr vec3& operator-=(vec3 v) { x -= v.x; y -= v.y; z -= v.z; return *this; }
-    constexpr vec3& operator*=(float s) { x *= s; y *= s; z *= s; return *this; }
-    constexpr vec3& operator/=(float s) { return *this *= (1.0 / s); }
+// 3. Templated 3D Vector
+template <typename T>
+struct basic_vec3 {
+    using value_type = T;
+
+    T x{0}, y{0}, z{0};
+
+    constexpr basic_vec3& operator+=(basic_vec3 v) {
+        x += v.x; y += v.y; z += v.z;
+        return *this;
+    }
+    constexpr basic_vec3& operator-=(basic_vec3 v) {
+        x -= v.x; y -= v.y; z -= v.z;
+        return *this;
+    }
+    constexpr basic_vec3& operator*=(T s) {
+        x *= s; y *= s; z *= s;
+        return *this;
+    }
+    constexpr basic_vec3& operator/=(T s) {
+        return *this *= (T(1) / s);
+    }
 };
 
+// 4. Non-member operators
+template <typename T>
+constexpr basic_vec3<T> operator+(basic_vec3<T> a, basic_vec3<T> b) {
+    return {a.x + b.x, a.y + b.y, a.z + b.z};
+}
 
-constexpr vec3 operator+(vec3 a, vec3 b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
-constexpr vec3 operator-(vec3 a, vec3 b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
-constexpr vec3 operator-(vec3 a)         { return {-a.x, -a.y, -a.z}; }
+template <typename T>
+constexpr basic_vec3<T> operator-(basic_vec3<T> a, basic_vec3<T> b) {
+    return {a.x - b.x, a.y - b.y, a.z - b.z};
+}
 
-constexpr vec3 operator*(vec3 v, float s) { return {v.x * s, v.y * s, v.z * s}; }
-constexpr vec3 operator*(float s, vec3 v) { return v * s; }
-constexpr vec3 operator/(vec3 v, float s) { return v * (1.0 / s); }
+template <typename T>
+constexpr basic_vec3<T> operator-(basic_vec3<T> a) {
+    return {-a.x, -a.y, -a.z};
+}
 
-[[nodiscard]] constexpr float dot(vec3 a, vec3 b) {
+template <typename T>
+constexpr basic_vec3<T> operator*(basic_vec3<T> v, T s) {
+    return {v.x * s, v.y * s, v.z * s};
+}
+
+template <typename T>
+constexpr basic_vec3<T> operator*(T s, basic_vec3<T> v) {
+    return v * s;
+}
+
+template <typename T>
+constexpr basic_vec3<T> operator/(basic_vec3<T> v, T s) {
+    return v * (T(1) / s);
+}
+
+// 5. Vector Operations
+template <typename T>
+[[nodiscard]] constexpr T dot(basic_vec3<T> a, basic_vec3<T> b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-[[nodiscard]] constexpr vec3 cross(vec3 a, vec3 b) {
-    return {a.y * b.z - a.z * b.y,
-            a.z * b.x - a.x * b.z,
-            a.x * b.y - a.y * b.x};
+template <typename T>
+[[nodiscard]] constexpr basic_vec3<T> cross(basic_vec3<T> a, basic_vec3<T> b) {
+    return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
-[[nodiscard]] constexpr float norm_squared(vec3 v) { return dot(v, v); }
+template <typename T>
+[[nodiscard]] constexpr T norm_squared(basic_vec3<T> v) {
+    return dot(v, v);
+}
 
-// sqrt is not constexpr in C++20 → plain inline. Prefer norm_squared for comparisons.
-#include <cmath>
-[[nodiscard]] inline float norm(vec3 v) { return std::sqrt(norm_squared(v)); }
+// In C++20, std::sqrt is fully constexpr for standard floating-point types!
+template <typename T>
+[[nodiscard]] constexpr T norm(basic_vec3<T> v) {
+    return std::sqrt(norm_squared(v));
+}
 
-// Returns a copy; does not mutate. Mutators would be verbs (normalize()).
-[[nodiscard]] inline vec3 normalized(vec3 v) {
-    assert(norm_squared(v) > 0.0 && "normalizing zero vector");
+template <typename T>
+[[nodiscard]] constexpr basic_vec3<T> normalized(basic_vec3<T> v) {
+    assert(norm_squared(v) > T(0) && "normalizing zero vector");
     return v / norm(v);
 }
 
-// Contract: b must be nonzero. Assert = free in release, loud in debug.
-[[nodiscard]] constexpr vec3 project_onto(vec3 a, vec3 b) {
-    assert(dot(b, b) > 0.0 && "projection onto zero vector");
+template <typename T>
+[[nodiscard]] constexpr basic_vec3<T> project_onto(basic_vec3<T> a, basic_vec3<T> b) {
+    assert(dot(b, b) > T(0) && "projection onto zero vector");
     return b * (dot(a, b) / dot(b, b));
 }
 
-// Absolute-or-relative tolerance (see formula sheet).
-[[nodiscard]] constexpr bool approx_equal(float a, float b,
-                                          float eps_abs = 1e-9,
-                                          float eps_rel = 1e-9) {
-    const float diff = cabs(a - b);
-    const float largest = cabs(a) > cabs(b) ? cabs(a) : cabs(b);
+// 6. Tolerance Comparison (Defaults change based on type)
+template <typename T>
+[[nodiscard]] constexpr bool approx_equal(T a, T b, 
+    T eps_abs = std::is_same_v<T, float> ? T(1e-5) : T(1e-9), 
+    T eps_rel = std::is_same_v<T, float> ? T(1e-5) : T(1e-9)) 
+{
+    const T diff = cabs(a - b);
+    const T largest = cabs(a) > cabs(b) ? cabs(a) : cabs(b);
     return diff <= eps_abs || diff <= eps_rel * largest;
 }
 
-[[nodiscard]] constexpr bool approx_equal(vec3 a, vec3 b,
-                                          float eps_abs = 1e-9,
-                                          float eps_rel = 1e-9) {
-    return approx_equal(a.x, b.x, eps_abs, eps_rel) &&
-           approx_equal(a.y, b.y, eps_abs, eps_rel) &&
+template <typename T>
+[[nodiscard]] constexpr bool approx_equal(basic_vec3<T> a, basic_vec3<T> b, 
+    T eps_abs = std::is_same_v<T, float> ? T(1e-5) : T(1e-9), 
+    T eps_rel = std::is_same_v<T, float> ? T(1e-5) : T(1e-9)) 
+{
+    return approx_equal(a.x, b.x, eps_abs, eps_rel) && 
+           approx_equal(a.y, b.y, eps_abs, eps_rel) && 
            approx_equal(a.z, b.z, eps_abs, eps_rel);
 }
+
+// 7. Clean Public Aliases
+using vec3  = basic_vec3<double>; // Keeps backward compatibility with your old code
+using vec3d = basic_vec3<double>;
+using vec3f = basic_vec3<float>;
