@@ -198,6 +198,26 @@ int main() {
                 //total vel at contact point = linear + angular vel
                 vec3f vel_a = c.is_body_a ? (bodies.vel[idx_a] + cross(bodies.omega[idx_a], r_a)) : particles.get_vel(idx_a);
                 vec3f vel_b = c.is_body_b ? (bodies.vel[idx_b] + cross(bodies.omega[idx_b], r_b)) : particles.get_vel(idx_b);
+
+
+                float inv_mass_a = c.is_body_a ? (1.0f / bodies.mass[idx_a]) : (1.0f / 0.1f);
+                float inv_mass_b = c.is_body_b ? (1.0f / bodies.mass[idx_b]) : (1.0f / 0.1f);
+
+                float v_rel = dot(vel_a - vel_b, c.normal);
+                if (v_rel < 0.0f) {
+                    // Angular Rot Inertia 
+                    float angular_inertia_a = c.is_body_a ? dot(cross(r_a, c.normal) * bodies.inv_inertia[idx_a], cross(r_a, c.normal)) : 0.0f;
+                    float angular_inertia_b = c.is_body_b ? dot(cross(r_b, c.normal) * bodies.inv_inertia[idx_b], cross(r_b, c.normal)) : 0.0f;
+
+                    // Full denominator with linear and angular mass
+                    float denominator = inv_mass_a + inv_mass_b + angular_inertia_a + angular_inertia_b;
+
+                    float j = -(1.0f + e) * v_rel / denominator;
+                    vec3f impulse = c.normal * j;
+                    // Mutate properties for A
+
+                    // Mutate properties for B
+                }
             }
         }
 
