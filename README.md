@@ -94,5 +94,6 @@ AVX2 dot product: 4.6× at L1-resident sizes, 2× at 1M. GN with LM damping conv
 *—  Rigid Body Simulator*: Semi-implicit Euler integration, sphere-plane bounce (e=0.8, settles correctly), sphere-sphere impulse collision (momentum conserved, energy loss matches restitution). Arena allocator 6× faster than default new/delete for per-frame contact data.
 
 **Week 12 — Threading overhead:**
-*— Single-threaded: 0.033ms/step. Thread pool (4 threads): 0.087ms/step. At 100 bodies + 10K particles, task submission overhead exceeds compute. Threading wins at ~100K+ particles or with heavier per-body work.*
-*— microphys capstone — 100 bodies + 10K particles, spatial hash, thread pool, EKF observer*
+*— Single-threaded:* 0.033ms/step. Thread pool (4 threads): 0.087ms/step. At 100 bodies + 10K particles, task submission overhead exceeds compute. Threading wins at ~100K+ particles or with heavier per-body work.
+
+*— microphys capstone:* 100 bodies + 10K particles, spatial hash, body+particle collisions, EKF observer*
