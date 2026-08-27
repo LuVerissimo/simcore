@@ -139,11 +139,12 @@ int main() {
 
         // update particles
         for (int i = 0; i < particles.count; ++i) {
-            int global_id = N_BODIES + 1;
+            int global_id = N_BODIES + i;
             spatial_hash.insert(global_id, particles.px[i], particles.py[i], particles.pz[i]);
 
             particles.vx[i] += gravity.x * dt; particles.vy[i] += gravity.y * dt; particles.vz[i] += gravity.z * dt;
-            particles.vx[i] += particles.vx[i] * dt; particles.vy[i] += particles.vy[i] * dt; particles.vz[i] += particles.vz[i] * dt;
+
+            particles.px[i] += particles.vx[i] * dt; particles.py[i] += particles.vy[i] * dt; particles.pz[i] += particles.vz[i] * dt;
 
             float particle_rad = 0.05f;
             if (particles.py[i] < particle_rad) {
@@ -171,13 +172,35 @@ int main() {
                     float combined_radius = rad_a + rad_b;
 
                     if (dist < combined_radius && dist > 0.0001f) {
-                        contacts.push_back({id_a, id_b, is_body_a, is_body_b diff/dist, combined_radius - dist});
+                        contacts.push_back({id_a, id_b, is_body_a, is_body_b, diff/dist, combined_radius - dist});
                     }
                 }
             }
         }
 
         // Same cell impulse loop
+        for (auto& c : contacts) {
+            if (c.is_body_a && c.is_body_b) {
+                int idx_a = c.is_body_a ? c.id_a : (c.id_a - N_BODIES);
+                int idx_b = c.is_body_b ? c.id_b : (c.id_b - N_BODIES);
+
+                vec3f pos_a = c.is_body_a ? bodies.pos(idx_a) : particles.get_pos(idx_a);
+                vec3f pos_b = c.is_body_b ? bodies.pos(idx_b) : particles.get_pos(idx_b);
+
+                // contact point is the midpoint of overlapping boundaries
+                float rad_a = c.is_body_a ? bodies.radius[idx_a] : 0.05f;
+                vec3f contact_point = pos_a - c.normal * (rad_a - (c.overlap * 0.5f));
+
+                // levarage arms
+                vec3f r_a = contact_point - pos_a;
+                vec3f r_b = contact_point - pos_b;
+                
+                //total vel at contact point = linear + angular vel
+                vec3f vel_a = c.is_body_a ? (bodies.vel[idx_a] + cross(bodies.omega[idx_a], r_a)) : particles.get_vel(idx_a);
+                vec3f vel_b = c.is_body_b ? (bodies.vel[idx_b] + cross(bodies.omega[idx_b], r_b)) : particles.get_vel(idx_b);
+            }
+        }
+
     }
 
 }
