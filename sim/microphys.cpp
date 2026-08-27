@@ -2,10 +2,12 @@
 #include "math/vec3.hpp"
 #include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <memory_resource>
 #include <random>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
 
 const int N_BODIES = 100;
 const int N_PARTICLES = 10000;
@@ -87,9 +89,9 @@ struct SpatialHash {
     SpatialHash(float cs) : cell_size(cs) {}
 
     uint64_t hash(float x, float y, float z) const {
-        int cx = (int)std::floorf(x / cell_size);
-        int cy = (int)std::floorf(y / cell_size);
-        int cz = (int)std::floorf(z / cell_size);
+        int cx = (int)std::floor(x / cell_size);
+        int cy = (int)std::floor(y / cell_size);
+        int cz = (int)std::floor(z / cell_size);
         
         // Pack three ints into one uint64_t using prime multipliers to reduce collisions
         return (uint64_t)((cx * 73856093) ^ (cy * 19349663) ^ (cz * 83492791));
@@ -111,7 +113,9 @@ int main() {
     float e = 0.8f; //restituion
     int steps = 20'000; //20 secs
     SpatialHash spatial_hash(2.0f);
- 
+    
+    auto t0 = std::chrono::high_resolution_clock::now();
+
     for (int step = 0; step < steps; ++step) {
         std::pmr::vector<Contact> contacts(&pool);
         spatial_hash.clear();
@@ -180,64 +184,65 @@ int main() {
 
         // Same cell impulse loop
         for (auto& c : contacts) {
-            if (c.is_body_a && c.is_body_b) {
-                int idx_a = c.is_body_a ? c.id_a : (c.id_a - N_BODIES);
-                int idx_b = c.is_body_b ? c.id_b : (c.id_b - N_BODIES);
+            int idx_a = c.is_body_a ? c.id_a : (c.id_a - N_BODIES);
+            int idx_b = c.is_body_b ? c.id_b : (c.id_b - N_BODIES);
 
-                vec3f pos_a = c.is_body_a ? bodies.pos(idx_a) : particles.get_pos(idx_a);
-                vec3f pos_b = c.is_body_b ? bodies.pos(idx_b) : particles.get_pos(idx_b);
+            vec3f pos_a = c.is_body_a ? bodies.pos[idx_a] : particles.get_pos(idx_a);
+            vec3f pos_b = c.is_body_b ? bodies.pos[idx_b] : particles.get_pos(idx_b);
 
-                // contact point is the midpoint of overlapping boundaries
-                float rad_a = c.is_body_a ? bodies.radius[idx_a] : 0.05f;
-                vec3f contact_point = pos_a - c.normal * (rad_a - (c.overlap * 0.5f));
+            // contact point is the midpoint of overlapping boundaries
+            float rad_a = c.is_body_a ? bodies.radius[idx_a] : 0.05f;
+            vec3f contact_point = pos_a - c.normal * (rad_a - (c.overlap * 0.5f));
 
-                // levarage arms
-                vec3f r_a = contact_point - pos_a;
-                vec3f r_b = contact_point - pos_b;
+            // levarage arms
+            vec3f r_a = contact_point - pos_a;
+            vec3f r_b = contact_point - pos_b;
+            
+            //total vel at contact point = linear + angular vel
+            vec3f vel_a = c.is_body_a ? (bodies.vel[idx_a] + cross(bodies.omega[idx_a], r_a)) : particles.get_vel(idx_a);
+            vec3f vel_b = c.is_body_b ? (bodies.vel[idx_b] + cross(bodies.omega[idx_b], r_b)) : particles.get_vel(idx_b);
+
+
+            float inv_mass_a = c.is_body_a ? (1.0f / bodies.mass[idx_a]) : (1.0f / 0.1f);
+            float inv_mass_b = c.is_body_b ? (1.0f / bodies.mass[idx_b]) : (1.0f / 0.1f);
+
+            float v_rel = dot(vel_a - vel_b, c.normal);
+            if (v_rel < 0.0f) {
+                // Angular Rot Inertia 
+                float angular_inertia_a = c.is_body_a ? dot(cross(r_a, c.normal) * bodies.inv_inertia[idx_a], cross(r_a, c.normal)) : 0.0f;
+                float angular_inertia_b = c.is_body_b ? dot(cross(r_b, c.normal) * bodies.inv_inertia[idx_b], cross(r_b, c.normal)) : 0.0f;
+
+                // Full denominator with linear and angular mass
+                float denominator = inv_mass_a + inv_mass_b + angular_inertia_a + angular_inertia_b;
+
+                float j = -(1.0f + e) * v_rel / denominator;
+                vec3f impulse = c.normal * j;
                 
-                //total vel at contact point = linear + angular vel
-                vec3f vel_a = c.is_body_a ? (bodies.vel[idx_a] + cross(bodies.omega[idx_a], r_a)) : particles.get_vel(idx_a);
-                vec3f vel_b = c.is_body_b ? (bodies.vel[idx_b] + cross(bodies.omega[idx_b], r_b)) : particles.get_vel(idx_b);
-
-
-                float inv_mass_a = c.is_body_a ? (1.0f / bodies.mass[idx_a]) : (1.0f / 0.1f);
-                float inv_mass_b = c.is_body_b ? (1.0f / bodies.mass[idx_b]) : (1.0f / 0.1f);
-
-                float v_rel = dot(vel_a - vel_b, c.normal);
-                if (v_rel < 0.0f) {
-                    // Angular Rot Inertia 
-                    float angular_inertia_a = c.is_body_a ? dot(cross(r_a, c.normal) * bodies.inv_inertia[idx_a], cross(r_a, c.normal)) : 0.0f;
-                    float angular_inertia_b = c.is_body_b ? dot(cross(r_b, c.normal) * bodies.inv_inertia[idx_b], cross(r_b, c.normal)) : 0.0f;
-
-                    // Full denominator with linear and angular mass
-                    float denominator = inv_mass_a + inv_mass_b + angular_inertia_a + angular_inertia_b;
-
-                    float j = -(1.0f + e) * v_rel / denominator;
-                    vec3f impulse = c.normal * j;
-                    
-                    // Mutate properties for A
-                    if (c.is_body_a) {
-                        bodies.vel[idx_a] += impulse * inv_mass_a;
-                        bodies.omega[idx_a] += cross(r_a, impulse) * bodies.inv_inertia[idx_a];
-                        bodies.pos[idx_a] += c.normal * (c.overlap * 0.5f);
-                    } else {
-                        auto p_a = particles[idx_a];
-                        p_a.vx += impulse.x * inv_mass_a; p_a.vy += impulse.y * inv_mass_a; p_a.vz += impulse.z * inv_mass_a;
-                        p_a.px += c.normal.x * (c.overlap * 0.5f); p_a.py += c.normal.y * (c.overlap * 0.5f); p_a.pz += c.normal.z * (c.overlap * 0.5f); 
-                    }
-                    
-                    // Mutate properties for B
-                    if (c.is_body_b) {
-                        bodies.vel[idx_b] += impulse * inv_mass_b;
-                        bodies.omega[idx_b] += cross(r_b, impulse) * bodies.inv_inertia[idx_b];
-                        bodies.pos[idx_b] += c.normal * (c.overlap * 0.5f);
-                    } else {
-                        auto p_b = particles[idx_b];
-                        p_b.vx += impulse.x * inv_mass_b; p_b.vy += impulse.y * inv_mass_b; p_b.vz += impulse.z * inv_mass_b;
-                        p_b.px += c.normal.x * (c.overlap * 0.5f); p_b.py += c.normal.y * (c.overlap * 0.5f); p_b.pz += c.normal.z * (c.overlap * 0.5f); 
-                    }
+                // Mutate properties for A
+                if (c.is_body_a) {
+                    bodies.vel[idx_a] += impulse * inv_mass_a;
+                    bodies.omega[idx_a] += cross(r_a, impulse) * bodies.inv_inertia[idx_a];
+                    bodies.pos[idx_a] += c.normal * (c.overlap * 0.5f);
+                } else {
+                    auto p_a = particles[idx_a];
+                    p_a.vx += impulse.x * inv_mass_a; p_a.vy += impulse.y * inv_mass_a; p_a.vz += impulse.z * inv_mass_a;
+                    p_a.px += c.normal.x * (c.overlap * 0.5f); p_a.py += c.normal.y * (c.overlap * 0.5f); p_a.pz += c.normal.z * (c.overlap * 0.5f); 
+                }
+                
+                // Mutate properties for B
+                if (c.is_body_b) {
+                    bodies.vel[idx_b] -= impulse * inv_mass_b;
+                    bodies.omega[idx_b] -= cross(r_b, impulse) * bodies.inv_inertia[idx_b];
+                    bodies.pos[idx_b] -= c.normal * (c.overlap * 0.5f);
+                } else {
+                    auto p_b = particles[idx_b];
+                    p_b.vx -= impulse.x * inv_mass_b; p_b.vy -= impulse.y * inv_mass_b; p_b.vz -= impulse.z * inv_mass_b;
+                    p_b.px -= c.normal.x * (c.overlap * 0.5f); p_b.py -= c.normal.y * (c.overlap * 0.5f); p_b.pz -= c.normal.z * (c.overlap * 0.5f); 
                 }
             }
         }
     }
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double total_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    std::cout << "Total: " << total_ms << " ms, per step: " << total_ms / steps << " ms\n";
 }
