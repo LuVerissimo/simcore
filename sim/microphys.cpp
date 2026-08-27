@@ -214,13 +214,30 @@ int main() {
 
                     float j = -(1.0f + e) * v_rel / denominator;
                     vec3f impulse = c.normal * j;
+                    
                     // Mutate properties for A
-
+                    if (c.is_body_a) {
+                        bodies.vel[idx_a] += impulse * inv_mass_a;
+                        bodies.omega[idx_a] += cross(r_a, impulse) * bodies.inv_inertia[idx_a];
+                        bodies.pos[idx_a] += c.normal * (c.overlap * 0.5f);
+                    } else {
+                        auto p_a = particles[idx_a];
+                        p_a.vx += impulse.x * inv_mass_a; p_a.vy += impulse.y * inv_mass_a; p_a.vz += impulse.z * inv_mass_a;
+                        p_a.px += c.normal.x * (c.overlap * 0.5f); p_a.py += c.normal.y * (c.overlap * 0.5f); p_a.pz += c.normal.z * (c.overlap * 0.5f); 
+                    }
+                    
                     // Mutate properties for B
+                    if (c.is_body_b) {
+                        bodies.vel[idx_b] += impulse * inv_mass_b;
+                        bodies.omega[idx_b] += cross(r_b, impulse) * bodies.inv_inertia[idx_b];
+                        bodies.pos[idx_b] += c.normal * (c.overlap * 0.5f);
+                    } else {
+                        auto p_b = particles[idx_b];
+                        p_b.vx += impulse.x * inv_mass_b; p_b.vy += impulse.y * inv_mass_b; p_b.vz += impulse.z * inv_mass_b;
+                        p_b.px += c.normal.x * (c.overlap * 0.5f); p_b.py += c.normal.y * (c.overlap * 0.5f); p_b.pz += c.normal.z * (c.overlap * 0.5f); 
+                    }
                 }
             }
         }
-
     }
-
 }
