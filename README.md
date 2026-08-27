@@ -21,7 +21,7 @@ for Georgia Tech MSCS (Computing Systems).
 | 9 | EKF/UKF · thread pools | EKF localization | done |
 | 10 | Nonlinear least squares · SIMD | AVX kernels + Gauss-Newton | done |
 | 11 | Rigid body dynamics · profiling & allocators | rigid-body sim core | done |
-| 12 | Capstone | `microphys` engine + live EKF | in-progress |
+| 12 | Capstone | `microphys` engine + live EKF | done |
 
 ## Layout
 ```
@@ -96,4 +96,4 @@ AVX2 dot product: 4.6× at L1-resident sizes, 2× at 1M. GN with LM damping conv
 **Week 12 — Threading overhead:**
 *— Single-threaded:* 0.033ms/step. Thread pool (4 threads): 0.087ms/step. At 100 bodies + 10K particles, task submission overhead exceeds compute. Threading wins at ~100K+ particles or with heavier per-body work.
 
-*— microphys capstone:* 100 bodies + 10K particles, spatial hash, body+particle collisions, EKF observer*
+*— microphys capstone:* 100 bodies + 10K particles, spatial hash, thread pool, EKF observer*

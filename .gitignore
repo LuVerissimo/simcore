@@ -1,7 +1,11 @@
 build/
 .cache/
-compile_commands.json
-*.o
-*.out
 .vscode/
-.idea/
+*.csv
+sim/efk_localization
+sim/heat2d
+sim/kf_tracker
+sim/microphys
+sim/monte_carlo
+sim/rigid_body
+CMakeFiles/
