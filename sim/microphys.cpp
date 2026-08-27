@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 #include <chrono>
+#include "math/thread_pool.hpp"
 
 const int N_BODIES = 100;
 const int N_PARTICLES = 10000;
@@ -104,6 +105,7 @@ struct SpatialHash {
     }
 };
 
+ThreadPool pool_t(4);
 int main() {
     Particles particles(N_PARTICLES, gen); {};
     Bodies bodies(gen);
@@ -120,41 +122,48 @@ int main() {
         std::pmr::vector<Contact> contacts(&pool);
         spatial_hash.clear();
         
-
         // update bodies
+        auto body_future = pool_t.submit([&] {
+            for (int i = 0; i < N_BODIES; ++i) {
+                //linear
+                bodies.vel[i] += gravity * dt;
+                bodies.pos[i] += bodies.vel[i] * dt;
+    
+                //angular
+                quat spin = {0.0f, bodies.omega[i].x, bodies.omega[i].y, bodies.omega[i].z};
+                bodies.ori[i] = bodies.ori[i] + (spin * bodies.ori[i]) * (0.5f * dt);
+                bodies.ori[i] = normalized(bodies.ori[i]);
+    
+                if (bodies.pos[i].y < bodies.radius[i]) {
+                    bodies.pos[i].y = bodies.radius[i];
+                    bodies.vel[i].y = -e * bodies.vel[i].y;
+                    bodies.omega[i] *= 0.95f;
+                }
+            }
+        });
+      
+        // update particles
+        auto particle_future = pool_t.submit([&] {
+            for (int i = 0; i < particles.count; ++i) {
+                
+                
+                particles.vx[i] += gravity.x * dt; particles.vy[i] += gravity.y * dt; particles.vz[i] += gravity.z * dt;
+                
+                particles.px[i] += particles.vx[i] * dt; particles.py[i] += particles.vy[i] * dt; particles.pz[i] += particles.vz[i] * dt;
+                
+                float particle_rad = 0.05f;
+                if (particles.py[i] < particle_rad) {
+                    particles.py[i] = particle_rad;
+                    particles.vy[i] = -e * particles.vy[i];
+                }
+            }
+        });
+        body_future.get();
+        particle_future.get();
+
+        // Build spatial hash after integration to avoid race condition
         for (int i = 0; i < N_BODIES; ++i) {
             spatial_hash.insert(i, bodies.pos[i].x, bodies.pos[i].y, bodies.pos[i].z);
-
-            //linear
-            bodies.vel[i] += gravity * dt;
-            bodies.pos[i] += bodies.vel[i] * dt;
-
-            //angular
-            quat spin = {0.0f, bodies.omega[i].x, bodies.omega[i].y, bodies.omega[i].z};
-            bodies.ori[i] = bodies.ori[i] + (spin * bodies.ori[i]) * (0.5f * dt);
-            bodies.ori[i] = normalized(bodies.ori[i]);
-
-            if (bodies.pos[i].y < bodies.radius[i]) {
-                bodies.pos[i].y = bodies.radius[i];
-                bodies.vel[i].y = -e * bodies.vel[i].y;
-                bodies.omega[i] *= 0.95f;
-            }
-        }
-
-        // update particles
-        for (int i = 0; i < particles.count; ++i) {
-            int global_id = N_BODIES + i;
-            spatial_hash.insert(global_id, particles.px[i], particles.py[i], particles.pz[i]);
-
-            particles.vx[i] += gravity.x * dt; particles.vy[i] += gravity.y * dt; particles.vz[i] += gravity.z * dt;
-
-            particles.px[i] += particles.vx[i] * dt; particles.py[i] += particles.vy[i] * dt; particles.pz[i] += particles.vz[i] * dt;
-
-            float particle_rad = 0.05f;
-            if (particles.py[i] < particle_rad) {
-                particles.py[i] = particle_rad;
-                particles.vy[i] = -e * particles.vy[i];
-            }
         }
 
         // broadlook up optimization(group objects by proximity)
