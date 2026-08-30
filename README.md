@@ -1,6 +1,6 @@
 # simcore
 
-Self-directed HPC and simulation bootcamp: applied math + modern C++, in preparation for Georgia Tech MSCS (Computing Systems specialization).
+Self-directed HPC and simulation bootcamp: applied math + modern C++, in preparation for Computing Systems specialization.
 
 **Cadence:** math derivations on paper, C++ experiments, weekly mini-project, CI (build + tests under ASan/UBSan) on every push.
 
