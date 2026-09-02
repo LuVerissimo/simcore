@@ -10,47 +10,11 @@
       "-g",
       "-pthread",
       "-o",
-      "client",
-      "client.c"
+      "boundedqueue",
+      "boundedqueue.c"
     ],
     "directory": "/home/tolu/simcore/c-prep/week13",
-    "file": "/home/tolu/simcore/c-prep/week13/client.c",
-    "output": "/home/tolu/simcore/c-prep/week13/client"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-c",
-      "-Wall",
-      "-Wextra",
-      "-Wpedantic",
-      "-std=gnu11",
-      "-g",
-      "-pthread",
-      "-o",
-      "race",
-      "race.c"
-    ],
-    "directory": "/home/tolu/simcore/c-prep/week13",
-    "file": "/home/tolu/simcore/c-prep/week13/race.c",
-    "output": "/home/tolu/simcore/c-prep/week13/race"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-c",
-      "-Wall",
-      "-Wextra",
-      "-Wpedantic",
-      "-std=gnu11",
-      "-g",
-      "-pthread",
-      "-o",
-      "server",
-      "server.c"
-    ],
-    "directory": "/home/tolu/simcore/c-prep/week13",
-    "file": "/home/tolu/simcore/c-prep/week13/server.c",
-    "output": "/home/tolu/simcore/c-prep/week13/server"
+    "file": "/home/tolu/simcore/c-prep/week13/boundedqueue.c",
+    "output": "/home/tolu/simcore/c-prep/week13/boundedqueue"
   }
 ]

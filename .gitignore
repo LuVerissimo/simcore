@@ -9,3 +9,6 @@ sim/microphys
 sim/monte_carlo
 sim/rigid_body
 CMakeFiles/
+c-prep/week13/client
+c-prep/week13/server
+c-prep/week13/race
