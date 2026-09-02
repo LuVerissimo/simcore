@@ -1,0 +1,20 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-std=gnu11",
+      "-g",
+      "-pthread",
+      "-o",
+      "shm_writer",
+      "shm_writer.c"
+    ],
+    "directory": "/home/tolu/simcore/c-prep/week14",
+    "file": "/home/tolu/simcore/c-prep/week14/shm_writer.c",
+    "output": "/home/tolu/simcore/c-prep/week14/shm_writer"
+  }
+]
