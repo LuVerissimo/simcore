@@ -1,3 +1,6 @@
+mailmap.txt
+mailmap.sh
+
 build/
 .cache/
 .vscode/
