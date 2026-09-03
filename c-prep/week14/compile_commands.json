@@ -16,7 +16,6 @@
     "directory": "/home/tolu/simcore/c-prep/week14",
     "file": "/home/tolu/simcore/c-prep/week14/shm_writer.c",
     "output": "/home/tolu/simcore/c-prep/week14/shm_writer"
-<<<<<<< HEAD
   },
   {
     "arguments": [
@@ -71,7 +70,5 @@
     "directory": "/home/tolu/simcore/c-prep/week14",
     "file": "/home/tolu/simcore/c-prep/week14/sharedqueue.c",
     "output": "/home/tolu/simcore/c-prep/week14/shm_reader"
-=======
->>>>>>> ec8c9f9d299c93c68f39a22106b54a0e9608f1a8
   }
 ]
