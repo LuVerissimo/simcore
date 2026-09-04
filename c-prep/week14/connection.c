@@ -161,17 +161,47 @@ int client_shm_queue(struct Client *client) {
     return EXIT_SUCCESS;
 }
 
-
 int client_run(int argc, char *argv[]) {
+    int return_status = 0;
     struct Client client;
+
+    int servinfo_allocated = 0;
+    int socket_opened = 0;
+
+    // if (argc > 1 && strcmp(argv[1], "--deadlock") == 0) {
+    //     printf("[TEST] Forcing a real client deadlock scenario...\n");
+        
+    //     pthread_mutex_t deadlock_mutex;
+    //     pthread_mutex_init(&deadlock_mutex, NULL);
+
+    //     // First lock acquisition: Success
+    //     pthread_mutex_lock(&deadlock_mutex);
+    //     printf("[TEST] Acquired lock first time. Attempting second lock to freeze...\n");
+
+    //     // Second lock acquisition on a non-recursive mutex: Infinite Block / Deadlock
+    //     pthread_mutex_lock(&deadlock_mutex); 
+
+    //     // This line will NEVER be reached
+    //     pthread_mutex_unlock(&deadlock_mutex);
+    //     pthread_mutex_destroy(&deadlock_mutex);
+    //     return 0;
+    // }
+
     client_init(&client, argc, argv);
+    if (client.servinfo != NULL) {
+        servinfo_allocated = 1;
+    }
+
 
     //loop thru all the results and connect to the first possible
     for (client.p = client.servinfo; client.p != NULL; client.p = client.p->ai_next) {
         if ((client.sockfd = socket(client.p->ai_family, client.p->ai_socktype, client.p->ai_protocol)) == -1) {
             perror("client: socket");
-            continue;
+            return_status = 1;
+            goto cleanup;
         }
+
+        socket_opened = 1;
 
         inet_ntop(client.p->ai_family, get_in_addr((struct sockaddr *)client.p->ai_addr), client.s, sizeof client.s);
         printf("client: attempting connection to %s\n", client.s);
@@ -179,14 +209,17 @@ int client_run(int argc, char *argv[]) {
         if (connect(client.sockfd, client.p->ai_addr, client.p->ai_addrlen) == -1) {
             perror("client: connect");
             close(client.sockfd);
+            socket_opened = 0;
             continue;
         }
+
         break;
     }
 
     if (client.p == NULL) {
         fprintf(stderr, "client: failed to connect");
-        return 2;
+        return_status = 3;
+        goto cleanup;
     }
 
     inet_ntop(client.p->ai_family, get_in_addr((struct sockaddr *)client.p->ai_addr), client.s, sizeof client.s);
@@ -196,30 +229,29 @@ int client_run(int argc, char *argv[]) {
     printf("Type a message to send to the server (Ctrl+D to quit):\n");
     while (fgets(client.buf, sizeof client.buf, stdin) != NULL) {
         size_t len = strlen(client.buf);
-
-        // 1 Send the keyboard input to server
         ssize_t total_sent = 0;
-        int send_failed = 0;
+
         while (total_sent < (ssize_t)len) {
             ssize_t bytes_sent = send(client.sockfd, client.buf + total_sent, len - total_sent, 0);
             if (bytes_sent == -1) {
                 perror("send");
-                send_failed = 1;
-                break;
+                return_status = 4;
+                goto cleanup;
             }
             total_sent += bytes_sent;
         }
-        if (send_failed) break;
 
         memset(client.buf, 0, sizeof client.buf);
         ssize_t numbytes = recv(client.sockfd, client.buf, sizeof(client.buf) -1, 0);
-
+        
         if (numbytes < 0) {
             perror("recv");
-            break;
+            return_status = 6;
+            goto cleanup;
         } else if (numbytes == 0) {
             printf("client: server closed connection\n");
-            break;
+            return_status = 7;
+            goto cleanup;
         }
 
         client.buf[numbytes] = '\0';
@@ -228,11 +260,23 @@ int client_run(int argc, char *argv[]) {
         // queue and buf handler
         if (client_shm_queue(&client) != 0) {
             fprintf(stderr, "Failed to push network data into shared memory queue\n");
+            return_status = 8;
+            goto cleanup;
         }
-    }   
+    }
+    
+    return_status = EXIT_SUCCESS;
+    goto cleanup;
 
-    close(client.sockfd);
-    return EXIT_SUCCESS;
+cleanup:
+    if (socket_opened) {
+        close(client.sockfd);
+    }
+    if (servinfo_allocated) {
+        freeaddrinfo(client.servinfo);
+    }
+
+    return return_status;
 }
 
 
@@ -308,8 +352,12 @@ int server_shm_queue(struct Server *server) {
 }
 
 int server_run(void){
+    int return_status = 0;
     struct Server server;
     server_init(&server);
+
+    int servinfo_allocated = (server.servinfo != NULL); 
+    int socket_opened = 0;
 
     for(server.p = server.servinfo; server.p != NULL; server.p = server.p->ai_next) {
         if ((server.sockfd = socket(server.p->ai_family, server.p->ai_socktype, server.p->ai_protocol)) == -1) {
@@ -320,28 +368,34 @@ int server_run(void){
         if (setsockopt(server.sockfd, SOL_SOCKET, SO_REUSEADDR, &server.yes,
                 sizeof(int)) == -1) {
             perror("setsockopt");
-            exit(1);
+            return_status = 1;
+            goto cleanup;
         }
 
         if (bind(server.sockfd, server.p->ai_addr, server.p->ai_addrlen) == -1) {
             close(server.sockfd);
+            socket_opened = 0;
             perror("server: bind");
             continue;
         }
 
         break;
     }
+    socket_opened = 1;
 
-    freeaddrinfo(server.servinfo); // all done with this structure
-
+    
     if (server.p == NULL)  {
         fprintf(stderr, "server: failed to bind\n");
-        exit(1);
+        return_status = 1;
+        goto cleanup;
     }
+    freeaddrinfo(server.servinfo); // all done with this structure
+    servinfo_allocated = 0;
 
     if (listen(server.sockfd, BACKLOG) == -1) {
         perror("listen");
-        exit(1);
+        return_status = 1;
+        goto cleanup;
     }
 
     server.sa.sa_handler = sigchld_handler; // reap all dead processes
@@ -349,7 +403,8 @@ int server_run(void){
     server.sa.sa_flags = SA_RESTART;
     if (sigaction(SIGCHLD, &server.sa, NULL) == -1) {
         perror("sigaction");
-        exit(1);
+        return_status = 1;
+        goto cleanup;
     }
 
     printf("server: waiting for connections...\n");
@@ -403,7 +458,18 @@ int server_run(void){
         close(server.new_fd);  // parent doesn't need this
     }
 
-    return 0;
+    return_status = EXIT_SUCCESS;
+    goto cleanup;
+
+cleanup:
+    if (socket_opened) {
+        close(server.sockfd);
+    }
+    if (servinfo_allocated) {
+        freeaddrinfo(server.servinfo);
+    }
+
+    return return_status;
 }
 
 
