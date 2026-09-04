@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-std=gnu11",
+      "-g",
+      "-pthread",
+      "-o",
+      "connection",
+      "connection.c"
+    ],
+    "directory": "/home/tolu/simcore/c-prep/week14",
+    "file": "/home/tolu/simcore/c-prep/week14/connection.c",
+    "output": "/home/tolu/simcore/c-prep/week14/connection"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-std=gnu11",
+      "-g",
+      "-pthread",
+      "-o",
+      "connection",
+      "sharedqueue.c"
+    ],
+    "directory": "/home/tolu/simcore/c-prep/week14",
+    "file": "/home/tolu/simcore/c-prep/week14/sharedqueue.c",
+    "output": "/home/tolu/simcore/c-prep/week14/connection"
+  }
+]
