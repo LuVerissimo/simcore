@@ -1,7 +1,10 @@
 mailmap.txt
-mailmap.sh
+*.deb
+*.sh
 
 build/
+build-cuda
+/
 .cache/
 .vscode/
 *.csv
@@ -15,4 +18,4 @@ CMakeFiles/
 c-prep/week13/client
 c-prep/week13/server
 c-prep/week13/race*.deb
-*.deb
+*.deblambda-ssh.sh
