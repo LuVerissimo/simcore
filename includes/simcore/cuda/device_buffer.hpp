@@ -17,13 +17,15 @@ template <typename T>
 class CudaBuffer {
 private:
     T* d_ptr;
-    size_t count_;
+    size_t buffer_size;
     DestructionTracker tracker;
 public:
     T* data() noexcept { return d_ptr; }
     //Constructor calls cudaMalloc. Throws on failure
-    CudaBuffer(size_t elements): d_ptr(nullptr), count_(elements) {
-        cudaError_t err = cudaMalloc(&d_ptr, elements * sizeof(T));
+    CudaBuffer(size_t size, DestructionTracker dt = {}): d_ptr(nullptr), buffer_size(size), tracker(dt) {
+
+        if
+        cudaError_t err = cudaMalloc(&d_ptr, size * sizeof(T));
         if (err != cudaSuccess) {
             throw std::runtime_error("CUDA Malloc failed" + std::string(cudaGetErrorString(err)));
         }
@@ -44,9 +46,9 @@ public:
     }
 
     //Move constructor and move assignment transfer ownership, null out the source.
-    CudaBuffer(CudaBuffer&& other) noexcept: d_ptr(other.d_ptr), count_(other.count_), tracker(other.tracker) {
+    CudaBuffer(CudaBuffer&& other) noexcept: d_ptr(other.d_ptr), buffer_size(other.buffer_size), tracker(other.tracker) {
         other.d_ptr = nullptr;
-        other.count_ = 0;
+        other.buffer_size = 0;
     }
     CudaBuffer& operator=(CudaBuffer&& other) noexcept {
         if (this != &other) {
@@ -61,11 +63,11 @@ public:
             }
 
             d_ptr = other.d_ptr;
-            count_ = other.count_;
+            buffer_size = other.buffer_size;
             tracker = other.tracker;
 
             other.d_ptr = nullptr;
-            other.count_ = 0;
+            other.buffer_size = 0;
         }
 
         return *this;
@@ -76,7 +78,7 @@ public:
     CudaBuffer& operator=(const CudaBuffer&) = delete;
 
     size_t size() const noexcept {
-        return count_;
+        return buffer_size;
     }
 };
 
