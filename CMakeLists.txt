@@ -77,4 +77,8 @@ add_subdirectory(tests)
 if(SIMCORE_CUDA)
   add_executable(test_device_buffer tests/cuda/test_device_buffer.cu)
   target_include_directories(test_device_buffer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+  add_library(simcore_cuda src/cuda/saxpy.cu)
+  target_include_directories(simcore_cuda PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(simcore_cuda simcore_math)
 endif()
