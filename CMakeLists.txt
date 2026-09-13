@@ -38,16 +38,13 @@ endif()
 option(SIMCORE_CUDA "Enable CUDA acceleration and processing modules" OFF)
 if(SIMCORE_CUDA)
   include(CheckLanguage)
-  set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
   check_language(CUDA)
   
   if(CMAKE_CUDA_COMPILER)
     enable_language(CUDA)
-    
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     set(CMAKE_CUDA_EXTENSIONS OFF)
-
     message(STATUS "CUDA Toolkit detected: ${CMAKE_CUDA_COMPILER}")
   else()
     message(FATAL_ERROR "CUDA language support requested but toolkit was not found")
@@ -75,3 +72,9 @@ FetchContent_MakeAvailable(doctest)
 
 enable_testing()
 add_subdirectory(tests)
+
+
+if(SIMCORE_CUDA)
+  add_executable(test_device_buffer tests/cuda/test_device_buffer.cu)
+  target_include_directories(test_device_buffer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+endif()

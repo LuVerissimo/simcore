@@ -21,10 +21,10 @@ private:
     DestructionTracker tracker;
 public:
     T* data() noexcept { return d_ptr; }
+    const T* data() const noexcept { return d_ptr; }
     //Constructor calls cudaMalloc. Throws on failure
     CudaBuffer(size_t size, DestructionTracker dt = {}): d_ptr(nullptr), buffer_size(size), tracker(dt) {
 
-        if
         cudaError_t err = cudaMalloc(&d_ptr, size * sizeof(T));
         if (err != cudaSuccess) {
             throw std::runtime_error("CUDA Malloc failed" + std::string(cudaGetErrorString(err)));
@@ -40,9 +40,9 @@ public:
             if (err != cudaSuccess) {
                 std::cerr << "Critical: cudaFree failed in destructor. Error: " << cudaGetErrorString(err) << std::endl;
             }
+            tracker.track_dealloc();
         }
         d_ptr = nullptr;
-        tracker.track_dealloc();
     }
 
     //Move constructor and move assignment transfer ownership, null out the source.
@@ -55,7 +55,7 @@ public:
 
             if (d_ptr != nullptr) {
                 cudaError_t err = cudaFree(d_ptr);
-                tracker.track_dealloc()
+                tracker.track_dealloc();
 
                 if (err != cudaSuccess) {
                     std::cerr << "Critical: cudaFree failed in destructor. Error: " << cudaGetErrorString(err) << std::endl;
