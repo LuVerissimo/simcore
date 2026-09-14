@@ -2,10 +2,11 @@
 #include <cassert>
 #include <cmath>
 #include <type_traits>
+#include <cuda_runtime.h>
 
 // 1. Generic absolute value helper
 template <typename T>
-[[nodiscard]] constexpr T cabs(T x) {
+[[nodiscard]] __host__ __device__ constexpr T cabs(T x) {
     return x < T(0) ? -x : x;
 }
 
@@ -23,51 +24,51 @@ struct basic_vec3 {
 
     T x{0}, y{0}, z{0};
 
-    constexpr basic_vec3& operator+=(basic_vec3 v) {
+    __host__ __device__ constexpr basic_vec3& operator+=(basic_vec3 v) {
         x += v.x; y += v.y; z += v.z;
         return *this;
     }
-    constexpr basic_vec3& operator-=(basic_vec3 v) {
+    __host__ __device__ constexpr basic_vec3& operator-=(basic_vec3 v) {
         x -= v.x; y -= v.y; z -= v.z;
         return *this;
     }
-    constexpr basic_vec3& operator*=(T s) {
+    __host__ __device__ constexpr basic_vec3& operator*=(T s) {
         x *= s; y *= s; z *= s;
         return *this;
     }
-    constexpr basic_vec3& operator/=(T s) {
+    __host__ __device__ constexpr basic_vec3& operator/=(T s) {
         return *this *= (T(1) / s);
     }
 };
 
 // 4. Non-member operators
 template <typename T>
-constexpr basic_vec3<T> operator+(basic_vec3<T> a, basic_vec3<T> b) {
+__host__ __device__ constexpr basic_vec3<T> operator+(basic_vec3<T> a, basic_vec3<T> b) {
     return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
 template <typename T>
-constexpr basic_vec3<T> operator-(basic_vec3<T> a, basic_vec3<T> b) {
+__host__ __device__ constexpr basic_vec3<T> operator-(basic_vec3<T> a, basic_vec3<T> b) {
     return {a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
 template <typename T>
-constexpr basic_vec3<T> operator-(basic_vec3<T> a) {
+__host__ __device__ constexpr basic_vec3<T> operator-(basic_vec3<T> a) {
     return {-a.x, -a.y, -a.z};
 }
 
 template <typename T>
-constexpr basic_vec3<T> operator*(basic_vec3<T> v, T s) {
+__host__ __device__ constexpr basic_vec3<T> operator*(basic_vec3<T> v, T s) {
     return {v.x * s, v.y * s, v.z * s};
 }
 
 template <typename T>
-constexpr basic_vec3<T> operator*(T s, basic_vec3<T> v) {
+__host__ __device__ constexpr basic_vec3<T> operator*(T s, basic_vec3<T> v) {
     return v * s;
 }
 
 template <typename T>
-constexpr basic_vec3<T> operator/(basic_vec3<T> v, T s) {
+__host__ __device__ constexpr basic_vec3<T> operator/(basic_vec3<T> v, T s) {
     return v * (T(1) / s);
 }
 
