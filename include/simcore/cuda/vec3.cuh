@@ -1,5 +1,5 @@
 #pragma once
-#include "vec3.hpp"
+#include "math/vec3.hpp"
 #include "simcore/cuda/device_buffer.hpp"
 
 

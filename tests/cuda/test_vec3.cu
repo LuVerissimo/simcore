@@ -20,7 +20,7 @@ void test_vec3_add(int n){
     
     simcore::cuda::vec3_add(d_A, d_B, d_C, n);
     
-    cudaMemcpy(h_C.data(), d_C, size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_C.data(), d_C.data(), size, cudaMemcpyDeviceToHost);
 
     for (int i = 0; i < n; i++) {
         assert(h_A[i].x == 5.0f);
