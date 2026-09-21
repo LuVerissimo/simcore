@@ -87,4 +87,7 @@ if(SIMCORE_CUDA)
 
   add_executable(cuda_test_vec3 tests/cuda/test_vec3.cu)
   target_link_libraries(cuda_test_vec3 simcore_cuda)
+
+  add_executable(bench_saxpy tests/cuda/bench_saxpy.cu)
+  target_link_libraries(bench_saxpy simcore_cuda)
 endif()
