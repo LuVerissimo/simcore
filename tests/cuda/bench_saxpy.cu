@@ -33,12 +33,12 @@ void bench_saxpy() {
             cpu_total += ms(t0, t1);
 
             //GPU (total: upload + kernel + download)
-            auto t0 = std::chrono::high_resolution_clock::now();
+            t0 = std::chrono::high_resolution_clock::now();
             cudaMemcpy(d_x.data(), h_x.data(), size, cudaMemcpyHostToDevice);
             cudaMemcpy(d_y.data(), h_y_gpu.data(), size, cudaMemcpyHostToDevice);
             simcore::cuda::saxpy(d_x, d_y, a, n);
             cudaMemcpy(h_y_gpu.data(), d_y.data(), size, cudaMemcpyDeviceToHost);
-            auto t1 = std::chrono::high_resolution_clock::now();
+            t1 = std::chrono::high_resolution_clock::now();
             gpu_total = ms(t0, t1);
 
 
