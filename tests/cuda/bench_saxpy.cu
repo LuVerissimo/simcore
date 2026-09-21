@@ -33,7 +33,7 @@ void bench_saxpy() {
             auto start_cpu = std::chrono::high_resolution_clock::now();
             for (int i = 0; i < n; i++) h_y_cpu[i] += a * h_x[i];
             auto stop_cpu = std::chrono::high_resolution_clock::now();
-            auto cpu_total = ms(start_cpu, stop_cpu);
+            cpu_total += ms(start_cpu, stop_cpu);
 
             //GPU
             auto start_gpu = std::chrono::high_resolution_clock::now();
@@ -42,7 +42,7 @@ void bench_saxpy() {
             simcore::cuda::saxpy(d_x, d_y, a, n);
             cudaMemcpy(h_y_gpu.data(), d_y.data(), size, cudaMemcpyDeviceToHost);
             auto stop_gpu = std::chrono::high_resolution_clock::now();
-            auto gpu_time = ms(start_gpu, stop_gpu);
+            gpu_total = ms(start_gpu, stop_gpu);
         }
 
         std::cout << "N=" << n
