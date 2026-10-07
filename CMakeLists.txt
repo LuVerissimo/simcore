@@ -75,7 +75,7 @@ add_subdirectory(tests)
 
 
 if(SIMCORE_CUDA)
-  add_library(simcore_cuda src/cuda/saxpy.cu src/cuda/vec3.cu)
+  add_library(simcore_cuda src/cuda/saxpy.cu src/cuda/vec3.cu src/cuda/spmv.cu)
   target_include_directories(simcore_cuda PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(simcore_cuda simcore_math)
 
