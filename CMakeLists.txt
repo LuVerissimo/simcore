@@ -75,7 +75,7 @@ add_subdirectory(tests)
 
 
 if(SIMCORE_CUDA)
-  add_library(simcore_cuda src/cuda/saxpy.cu src/cuda/vec3.cu src/cuda/spmv.cu)
+  add_library(simcore_cuda src/cuda/saxpy.cu src/cuda/vec3.cu src/cuda/spmv.cu src/cuda/cg_gpu.cu)
   target_include_directories(simcore_cuda PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(simcore_cuda simcore_math)
 
@@ -93,4 +93,8 @@ if(SIMCORE_CUDA)
 
   add_executable(bench_spmv_csr tests/cuda/bench_spmv_csr.cu)
   target_link_libraries(bench_spmv_csr simcore_cuda)
+  
+  add_executable(test_cg_gpu tests/cuda/test_cg_gpu.cu)
+  target_link_libraries(test_cg_gpu simcore_cuda doctest)
+
 endif()

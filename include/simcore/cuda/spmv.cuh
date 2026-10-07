@@ -37,7 +37,6 @@ inline CSRMatrix generateLaplace2DCSR(int gridDim) {
     csr.colIdx.reserve(totalNNZ);
 
     // Step 2: Populate the CSR structural arrays
-    int currentNNZ = 0;
     csr.rowPtrs[0] = 0;
 
     for (int r = 0; r < N; ++r) {
