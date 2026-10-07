@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 __global__
-void spmvCSRKernel(const int* rowPtrs, const int* colIdx, const double* values, double* x, double* y, int numRows) {
+void spmvCSRKernel(const int* rowPtrs, const int* colIdx, const double* values, const double* x, double* y, int numRows) {
     unsigned int row = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (row < numRows) {
@@ -19,7 +19,7 @@ void spmvCSRKernel(const int* rowPtrs, const int* colIdx, const double* values, 
 }
 
 namespace simcore::cuda {
-    void spmvCSR(const int* rowPtrs, const int* colIdx, const double* values, double* x, double* y, int numRows) {
+    void spmvCSR(const int* rowPtrs, const int* colIdx, const double* values, const double* x, double* y, int numRows) {
         int threadsPerBlock = 256;
         int blocksPerGrid = (numRows + threadsPerBlock - 1) / threadsPerBlock;
         spmvCSRKernel<<<blocksPerGrid, threadsPerBlock>>>(rowPtrs, colIdx, values, x, y, numRows);
