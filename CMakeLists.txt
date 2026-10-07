@@ -90,4 +90,7 @@ if(SIMCORE_CUDA)
 
   add_executable(bench_saxpy tests/cuda/bench_saxpy.cu)
   target_link_libraries(bench_saxpy simcore_cuda)
+
+  add_executable(bench_spmv_csr tests/cuda/bench_spmv_csr.cu)
+  target_link_libraries(bench_spmv_csr simcore_cuda)
 endif()
