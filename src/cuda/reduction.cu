@@ -136,7 +136,6 @@ namespace simcore::cuda {
 
         size_t threadsPerBlock = 256;
         size_t blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
-        size_t warpsPerBlock = (threadsPerBlock + 31) / 32; 
         size_t sharedMemSize = 0;
         
         if (targetReductionKernel == warpShuffleReductionKernel) {
