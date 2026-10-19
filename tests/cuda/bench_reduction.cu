@@ -40,7 +40,7 @@ void bench_reduction(auto kernel) {
             cudaMemcpy(d_a.data(), h_a.data(), size, cudaMemcpyHostToDevice);
             cudaMemcpy(d_b.data(), h_b.data(), size, cudaMemcpyHostToDevice);
 
-            double gpu_dot = simcore::cuda::launch_reduction(d_a.data(), d_b.data(), kernel);
+            double gpu_dot = simcore::cuda::launch_reduction(d_a.data(), d_b.data(), n, kernel);
             t1 = std::chrono::high_resolution_clock::now();
             gpu_total += ms(t0, t1);
 
