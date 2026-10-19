@@ -145,6 +145,8 @@ namespace simcore::cuda {
         } else {
             sharedMemSize = threadsPerBlock * sizeof(double); // 2048 bytes
         }
+
+        targetReductionKernel<<<blocksPerGrid, threadsPerBlock, sharedMemSize>>>(d_a, d_b, d_out.data(), n);
        
         cudaError_t errSync = cudaDeviceSynchronize();
         if (errSync != cudaSuccess) {
