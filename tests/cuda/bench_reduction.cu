@@ -16,6 +16,12 @@ void bench_reduction(auto kernel) {
         double cpu_total = 0, gpu_total = 0, kernel_total = 0;
         int runs = 5;
         int size = n * sizeof(double);
+
+        // CUDA Event handles for microsecond-accurate kernel timing
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+
         for (int r = 0; r < runs; r++) {
             
             //Setup Host
@@ -25,6 +31,7 @@ void bench_reduction(auto kernel) {
             //Setup Device 
             CudaBuffer<double> d_a(n);
             CudaBuffer<double> d_b(n);
+            CudaBuffer<double> d_out(1);
 
             //CPU
             auto t0 = std::chrono::high_resolution_clock::now();
@@ -44,17 +51,43 @@ void bench_reduction(auto kernel) {
             t1 = std::chrono::high_resolution_clock::now();
             gpu_total += ms(t0, t1);
 
-            std::cout << " CPU_dot=" << cpu_dot << " GPU_dot=" << gpu_dot << "\n";
+            if (r == 0) {
+                std::cout << "  [Verification] CPU_dot=" << cpu_dot << " GPU_dot=" << gpu_dot << "\n";
+            }
 
-            // Kernel only (data already on device from above, re-upload fresh)
-            t0 = std::chrono::high_resolution_clock::now();
-            simcore::cuda::launch_reduction(d_a.data(), d_b.data(), n, kernel);
-            t1 = std::chrono::high_resolution_clock::now();
-            kernel_total += ms(t0, t1);
+            //Kernel Only Bench
+            double zero = 0.0;
+            cudaMemcpy(d_out.data(), &zero, sizeof(double), cudaMemcpyHostToDevice);
+
+            size_t threadsPerBlock = 256;
+            size_t blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
+
+            // shared mem selection mirroring .cu dynamica imple
+            size_t sharedMemSize = 0;
+            if (kernel == warpShuffleReductionKernel) {
+                size_t warpsPerBlock = (threadsPerBlock + 31) / 32;
+                sharedMemSize = warpsPerBlock * sizeof(double);
+            } else {
+                sharedMemSize = threadsPerBlock * sizeof(double);
+            }
+
+             // Record start event on the GPU stream
+            cudaEventRecord(start);
+            
+            kernel<<<blocksPerGrid, threadsPerBlock, sharedMemSize>>>(d_a.data(), d_b.data(), d_out.data(), n);
+            
+            // Record stop event right after execution tracking
+            cudaEventRecord(stop);
+            cudaEventSynchronize(stop); // Wait specifically for this kernel execution thread to clear
+
+            float milliseconds = 0;
+            cudaEventElapsedTime(&milliseconds, start, stop);
+            kernel_total_ms += milliseconds;
         }
     
         double cpu_avg = cpu_total / runs;
         double gpu_avg = gpu_total / runs;
+        
         double kernel_avg_seconds = (kernel_total / runs) / 1000;
         double bandwidth = 2 * n * sizeof(double) / (kernel_avg_seconds) / 1e9 ;
         
@@ -63,6 +96,10 @@ void bench_reduction(auto kernel) {
                     << " GPU(total)=" << gpu_avg << "ms"
                     << " Kernel=" << kernel_avg_seconds << "s"
                     << " Bandwidth=" << bandwidth << "GB/s\n";
+
+        // Cleanup events
+        cudaEventDestroy(start);
+        cudaEventDestroy(stop);
     }
 }
 

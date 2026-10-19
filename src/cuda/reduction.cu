@@ -137,9 +137,14 @@ namespace simcore::cuda {
         size_t threadsPerBlock = 256;
         size_t blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
         size_t warpsPerBlock = (threadsPerBlock + 31) / 32; 
-        size_t sharedMemSize =  warpsPerBlock * sizeof(double);
+        size_t sharedMemSize = 0;
         
-        targetReductionKernel<<<blocksPerGrid, threadsPerBlock, sharedMemSize>>>(d_a, d_b, d_out.data(), n);
+        if (targetReductionKernel == warpShuffleReductionKernel) {
+            size_t warpsPerBlock = (threadsPerBlock + 31) / 32; 
+            sharedMemSize = warpsPerBlock * sizeof(double); // 64 bytes
+        } else {
+            sharedMemSize = threadsPerBlock * sizeof(double); // 2048 bytes
+        }
        
         cudaError_t errSync = cudaDeviceSynchronize();
         if (errSync != cudaSuccess) {
