@@ -40,10 +40,11 @@ void bench_reduction() {
             cudaMemcpy(d_a.data(), h_a.data(), size, cudaMemcpyHostToDevice);
             cudaMemcpy(d_b.data(), h_b.data(), size, cudaMemcpyHostToDevice);
 
-            simcore::cuda::naive_reduction_dot(d_a.data(), d_b.data(), n);
+            double gpu_dot = simcore::cuda::naive_reduction_dot(d_a.data(), d_b.data(), n);
             t1 = std::chrono::high_resolution_clock::now();
             gpu_total += ms(t0, t1);
 
+            std::cout << " CPU_dot=" << cpu_dot << " GPU_dot=" << gpu_dot << "\n";
 
             // Kernel only (data already on device from above, re-upload fresh)
             t0 = std::chrono::high_resolution_clock::now();
@@ -56,7 +57,7 @@ void bench_reduction() {
         double gpu_avg = gpu_total / runs;
         double kernel_avg_seconds = (kernel_total / runs) / 1000;
         double bandwidth = 2 * n * sizeof(double) / (kernel_avg_seconds) / 1e9 ;
-
+        
         std::cout << "N=" << n
                     << " CPU=" << cpu_avg << "ms"
                     << " GPU(total)=" << gpu_avg << "ms"

@@ -28,6 +28,8 @@ CUDA (Docker on WSL2):
 CUDA (Lambda):
     ./lambda-ssh.sh <ip-address>
     pip install cmake
+    git clone <repo>
+    cd simcore
     cmake -B build-cuda -DSIMCORE_CUDA=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build-cuda
 
@@ -79,3 +81,6 @@ Standalone SpMV benchmark (1M rows, ~5 nnz/row, 2D Laplace):
 Standalone SpMV is slower than CPU due to transfer overhead. But inside CG the matrix stays on device across all iterations, paying transfer cost once.
 
 GPU CG solver: SpMV on device, dot products and axpy on CPU (download/upload each iteration). Converges in 225 iterations on 100x100 2D Laplace, matches CPU CG to 1e-10. compute-sanitizer clean.
+
+
+## Week 17:
