@@ -13,7 +13,7 @@ auto ms = [](auto a, auto b) {
 void bench_reduction(auto kernel) {
     using simcore::cuda::CudaBuffer;
     for (int n : {10'000'000, 100'000'000}) {
-        double cpu_total = 0, gpu_total = 0, kernel_total = 0;
+        double cpu_total = 0, gpu_total = 0, kernel_total_ms = 0;
         int runs = 5;
         int size = n * sizeof(double);
 
@@ -117,6 +117,7 @@ int main() {
     std::cout << "\n";
     
     std::cout << "Running WarpShuffle" << "\n";
-    bench_reduction(warpShuffleReductionKernel); // thread coarsening
+    bench_reduction(warpShuffleReductionKernel); // warp shuffle
+    
     std::cout << "Done WarpShuffle" << "\n";
 }
