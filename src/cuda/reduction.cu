@@ -70,9 +70,14 @@ __global__ void warpShuffleReductionKernel(const double* a,  const double* b, do
     __syncthreads();
 
     // final recution using first warp
-    if (warpId == 0) val = (tid < (blockDim.x / 32)) ? sdata[lane] : 0.0;
+    if (warpId == 0) {
+        val = (tid < (blockDim.x / 32)) ? sdata[lane] : 0.0;
 
-    if (tid == 0) atomicAdd(output, val);
+        for (int offset = 16; offset > 0; offset /=2) {
+            val += __shfl_down_sync(0xffffffff, val, offset);
+        }
+        if (tid == 0) atomicAdd(output, val);
+    }
 }
 
 using simcore::cuda::CudaBuffer;
