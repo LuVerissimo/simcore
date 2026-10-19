@@ -10,7 +10,7 @@ auto ms = [](auto a, auto b) {
     return std::chrono::duration<double, std::milli>(b-a).count();
 };
 
-void bench_reduction() {
+void bench_reduction(auto kernel) {
     using simcore::cuda::CudaBuffer;
     for (int n : {10'000'000, 100'000'000}) {
         double cpu_total = 0, gpu_total = 0, kernel_total = 0;
@@ -40,7 +40,7 @@ void bench_reduction() {
             cudaMemcpy(d_a.data(), h_a.data(), size, cudaMemcpyHostToDevice);
             cudaMemcpy(d_b.data(), h_b.data(), size, cudaMemcpyHostToDevice);
 
-            double gpu_dot = simcore::cuda::naive_reduction_dot(d_a.data(), d_b.data(), n);
+            double gpu_dot = simcore::cuda::launch_reduction(d_a.data(), d_b.data(), kernel);
             t1 = std::chrono::high_resolution_clock::now();
             gpu_total += ms(t0, t1);
 
@@ -48,7 +48,7 @@ void bench_reduction() {
 
             // Kernel only (data already on device from above, re-upload fresh)
             t0 = std::chrono::high_resolution_clock::now();
-            simcore::cuda::naive_reduction_dot(d_a.data(), d_b.data(), n);
+            simcore::cuda::launch_reduction(d_a.data(), d_b.data(), n, kernel);
             t1 = std::chrono::high_resolution_clock::now();
             kernel_total += ms(t0, t1);
         }
@@ -67,5 +67,7 @@ void bench_reduction() {
 }
 
 int main() {
-    bench_reduction();
+    // bench_reduction(naiveReductionKernel); // naive
+    bench_reduction(sequentialAddressingReductionKernel); // sequential addressing
+    // bench_reduction(warpShuffleReductionKernel); // thread coarsening
 }
