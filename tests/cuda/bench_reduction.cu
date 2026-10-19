@@ -88,7 +88,7 @@ void bench_reduction(auto kernel) {
         double cpu_avg = cpu_total / runs;
         double gpu_avg = gpu_total / runs;
         
-        double kernel_avg_seconds = (kernel_total / runs) / 1000;
+        double kernel_avg_seconds = (kernel_total_ms / runs) / 1000;
         double bandwidth = 2 * n * sizeof(double) / (kernel_avg_seconds) / 1e9 ;
         
         std::cout << "N=" << n
