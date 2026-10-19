@@ -65,6 +65,27 @@ namespace simcore::cuda {
 
         return h_out;
     }
+    [[nodiscard]] double naive_reduction_dot(const double* d_a, const double* d_b, int n) {
+        // device setup
+        CudaBuffer<double> d_out(1);
+        double h_out = 0.0;
+        cudaMemcpy(d_out.data(), &h_out, sizeof(double), cudaMemcpyHostToDevice);
+
+        size_t threadsPerBlock = 256;
+        size_t blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
+        size_t sharedMemSize = threadsPerBlock * sizeof(double);
+    
+        naiveReductionKernel<<<blocksPerGrid, threadsPerBlock, sharedMemSize>>>(d_a, d_b, d_out.data(), n);
+       
+        cudaError_t errSync = cudaDeviceSynchronize();
+        if (errSync != cudaSuccess) {
+            throw std::runtime_error("Naive kernel failed: " + std::string(cudaGetErrorString(errSync)));
+        }
+    
+        cudaMemcpy(&h_out, d_out.data(), sizeof(double), cudaMemcpyDeviceToHost);
+        return h_out;
+    }
+
     void sequential_addressing_reduction(double* input, double* output);
     void warp_shuffle_reduction(double* input, double* output);
 }
