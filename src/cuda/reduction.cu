@@ -71,12 +71,15 @@ __global__ void warpShuffleReductionKernel(const double* a,  const double* b, do
 
     // final recution using first warp
     if (warpId == 0) {
-        val = (tid < (blockDim.x / 32)) ? sdata[lane] : 0.0;
+        unsigned int totalWarps = blockDim.x / 32;
+        val = (lane < totalWarps) ? sdata[lane] : 0.0;
 
         for (int offset = 16; offset > 0; offset /=2) {
             val += __shfl_down_sync(0xffffffff, val, offset);
         }
-        if (tid == 0) atomicAdd(output, val);
+        if (tid == 0) {
+            atomicAdd(output, val);
+        }
     }
 }
 
@@ -133,13 +136,14 @@ namespace simcore::cuda {
 
         size_t threadsPerBlock = 256;
         size_t blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
-        size_t sharedMemSize = threadsPerBlock * sizeof(double);
+        size_t warpsPerBlock = (threadsPerBlock + 31) / 32; 
+        size_t sharedMemSize =  warpsPerBlock * sizeof(double);
         
         targetReductionKernel<<<blocksPerGrid, threadsPerBlock, sharedMemSize>>>(d_a, d_b, d_out.data(), n);
        
         cudaError_t errSync = cudaDeviceSynchronize();
         if (errSync != cudaSuccess) {
-            throw std::runtime_error("Naive kernel failed: " + std::string(cudaGetErrorString(errSync)));
+            throw std::runtime_error("Reduction kernel failed: " + std::string(cudaGetErrorString(errSync)));
         }
     
         cudaMemcpy(&h_out, d_out.data(), sizeof(double), cudaMemcpyDeviceToHost);
