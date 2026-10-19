@@ -67,7 +67,7 @@ void bench_reduction(auto kernel) {
 }
 
 int main() {
-    // bench_reduction(naiveReductionKernel); // naive
+    bench_reduction(naiveReductionKernel); // naive
     bench_reduction(sequentialAddressingReductionKernel); // sequential addressing
     // bench_reduction(warpShuffleReductionKernel); // thread coarsening
 }
