@@ -26,7 +26,7 @@ CUDA (Docker on WSL2):
     ./cuda-build.sh
 
 CUDA (Lambda):
-
+    ./lambda-ssh.sh <ip-address>
     pip install cmake
     cmake -B build-cuda -DSIMCORE_CUDA=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build-cuda
