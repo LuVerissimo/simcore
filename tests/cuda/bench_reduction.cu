@@ -10,7 +10,7 @@ auto ms = [](auto a, auto b) {
     return std::chrono::duration<double, std::milli>(b-a).count();
 };
 
-void bench_reduction(auto kernel) {
+void bench_reduction(ReductionKernelPtr kernel) {
     using simcore::cuda::CudaBuffer;
     for (int n : {10'000'000, 100'000'000}) {
         double cpu_total = 0, gpu_total = 0, kernel_total_ms = 0;
