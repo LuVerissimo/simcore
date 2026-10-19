@@ -67,7 +67,19 @@ void bench_reduction(auto kernel) {
 }
 
 int main() {
+
+    std::cout << "Running Naive" << "\n";
     bench_reduction(naiveReductionKernel); // naive
+    std::cout << "Done Naive" << "\n";
+    
+    std::cout << "\n";
+    
     bench_reduction(sequentialAddressingReductionKernel); // sequential addressing
-    // bench_reduction(warpShuffleReductionKernel); // thread coarsening
+    std::cout << "Done Sequential" << "\n";
+    
+    std::cout << "\n";
+    
+    std::cout << "Running WarpShuffle" << "\n";
+    bench_reduction(warpShuffleReductionKernel); // thread coarsening
+    std::cout << "Done WarpShuffle" << "\n";
 }

@@ -48,7 +48,32 @@ __global__ void sequentialAddressingReductionKernel(const double* a,  const doub
         atomicAdd(output, sdata[0]);
     }
 }
-__global__ void warpShuffleReductionKernel(const double* a,  const double* b, double* output, unsigned int N){}
+__global__ void warpShuffleReductionKernel(const double* a,  const double* b, double* output, unsigned int N){
+    extern __shared__ double sdata[];
+
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // Initial Element
+    double val = (i < N) ? a[i] * b[i] : 0.0;
+
+    // Reduce within the local warp
+    unsigned int lane = tid % 32;
+    unsigned int warpId = tid / 32;
+
+    for (int offset = 16; offset > 0; offset /= 2) {
+        val += __shfl_down_sync(0xffffffff, val, offset);
+    }
+
+    // write warp results to shared mem
+    if (lane == 0) sdata[warpId] = val;
+    __syncthreads();
+
+    // final recution using first warp
+    if (warpId == 0) val = (tid < (blockDim.x / 32)) ? sdata[lane] : 0.0;
+
+    if (tid == 0) atomicAdd(output, val);
+}
 
 using simcore::cuda::CudaBuffer;
 namespace simcore::cuda {
