@@ -45,6 +45,7 @@ if(SIMCORE_CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     set(CMAKE_CUDA_EXTENSIONS OFF)
+    set(CMAKE_CUDA_ARCHITECTURES 80)
     message(STATUS "CUDA Toolkit detected: ${CMAKE_CUDA_COMPILER}")
   else()
     message(FATAL_ERROR "CUDA language support requested but toolkit was not found")
@@ -75,7 +76,7 @@ add_subdirectory(tests)
 
 
 if(SIMCORE_CUDA)
-  add_library(simcore_cuda src/cuda/saxpy.cu src/cuda/vec3.cu src/cuda/spmv.cu src/cuda/cg_gpu.cu)
+  add_library(simcore_cuda src/cuda/saxpy.cu src/cuda/vec3.cu src/cuda/spmv.cu src/cuda/cg_gpu.cu src/cuda/reduction.cu)
   target_include_directories(simcore_cuda PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(simcore_cuda simcore_math)
 
@@ -96,5 +97,8 @@ if(SIMCORE_CUDA)
   
   add_executable(test_cg_gpu tests/cuda/test_cg_gpu.cu)
   target_link_libraries(test_cg_gpu simcore_cuda doctest)
+  
+  add_executable(bench_reduction tests/cuda/bench_reduction.cu)
+  target_link_libraries(bench_reduction simcore_cuda doctest)
 
 endif()
