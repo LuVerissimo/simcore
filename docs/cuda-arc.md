@@ -83,4 +83,25 @@ Standalone SpMV is slower than CPU due to transfer overhead. But inside CG the m
 GPU CG solver: SpMV on device, dot products and axpy on CPU (download/upload each iteration). Converges in 225 iterations on 100x100 2D Laplace, matches CPU CG to 1e-10. compute-sanitizer clean.
 
 
-## Week 17:
+## Week 17: Parallel Reduction (Three Variants)
+Read: Kirk & Hwu Ch 6 (performance), Ch 8 (reduction patterns), Ch 10 (reduction optimizations).
+
+Three reduction kernels for GPU dot products, all behind a generic `launch_reduction` that takes a kernel function pointer to eliminate wrapper duplication.
+
+**Naive (interleaved addressing):** stride doubles each step, thread tid % (2*stride) == 0 participates. Causes warp divergence since active threads are non-contiguous.
+
+**Sequential addressing:** stride halves from blockDim.x/2, threads 0..stride-1 participate. Contiguous active threads, no divergence within a warp until stride < 32.
+
+**Warp shuffle:** `__shfl_down_sync` replaces shared memory for intra-warp reduction. Cross-warp partial sums still go through shared memory, then warp 0 does a final shuffle pass.
+
+Benchmark (A100 40GB, kernel-only, 5-run average):
+
+| Variant | 10M (GB/s) | 100M (GB/s) | vs. Naive |
+|---------|-----------|------------|-----------|
+| Naive | 353 | 769 | 1.0x |
+| Sequential | 466 | 1178 | 1.53x |
+| Warp Shuffle | 473 | 1099 | 1.43x |
+
+Sequential beats shuffle at this block size (256) because without first-add-during-load coarsening, both do the same total work; sequential's simpler instruction mix wins. Peak bandwidth utilization: 74% of A100 theoretical (~1555 GB/s).
+
+All three pass compute-sanitizer with 0 errors. Not yet wired into CG solver; full GPU-resident CG (r, p, x, Ap kept on device) is prerequisite before reduction integration is useful.
