@@ -1,9 +1,13 @@
 #include "simcore/cuda/cg_gpu.cuh"
 #include "simcore/cuda/spmv.cuh"
 #include "simcore/cuda/device_buffer.hpp"
+#include "simcore/cuda/reduction.cuh"
+#include "simcore/cuda/saxpy.cuh"
 
 using simcore::cuda::CudaBuffer;
 using simcore::cuda::spmvCSR;
+using simcore::cuda::launch_reduction;
+using simcore::cuda::daxpy;
 
 namespace simcore::cuda {
     [[nodiscard]] std::vector<double> solve_cg_gpu(
@@ -16,59 +20,55 @@ namespace simcore::cuda {
         //generate host CSR matrix structure
         int numRows = A.rows;
         int nnz = A.values.size();
-        // device 
+        // device buffers
+        CudaBuffer<double> d_x(numRows); // solution vector
+        CudaBuffer<double> d_r(numRows); // residual
+        CudaBuffer<double> d_p(numRows); // search direction
+        CudaBuffer<double> d_Ap(numRows); // SpMV result
+        CudaBuffer<double> d_b(numRows); // right hand side
         CudaBuffer<int> rowsPtrs(numRows + 1);
         CudaBuffer<int> colIdx(nnz);
-        CudaBuffer<double> values(nnz);
+        CudaBuffer<double> values(nnz); 
         
-        // device 
-        CudaBuffer<double> d_Ap(numRows);   
-        CudaBuffer<double> d_p(numRows);
+        // upload x -> d_p
+        cudaMemcpy(d_p.data(), x.data(), numRows * sizeof(double), cudaMemcpyHostToDevice);
+        // upload x -> d_x
+        cudaMemcpy(d_x.data(), x.data(), numRows * sizeof(double), cudaMemcpyHostToDevice);
+        // upload b -> d_b
+        cudaMemcpy(d_b.data(), b.data(), numRows * sizeof(double), cudaMemcpyHostToDevice);
 
         // upload inorder to use kernel
         cudaMemcpy(rowsPtrs.data(), A.row_ptr.data(), (numRows + 1) * sizeof(int), cudaMemcpyHostToDevice);
         cudaMemcpy(colIdx.data(), A.col_idx.data(), nnz * sizeof(int), cudaMemcpyHostToDevice);
         cudaMemcpy(values.data(), A.values.data(), nnz * sizeof(double), cudaMemcpyHostToDevice);
 
-        // upload x -> d_p
-        cudaMemcpy(d_p.data(), x.data(), numRows * sizeof(double), cudaMemcpyHostToDevice);
-
         // initial kernel
-        spmvCSR(rowsPtrs.data(), colIdx.data(), values.data(), d_p.data(), d_Ap.data(), numRows);
-
-        // initial download
-        std::vector<double> Ax(numRows);
-        cudaMemcpy(Ax.data(), d_Ap.data(), numRows * sizeof(double), cudaMemcpyDeviceToHost);
+        spmvCSR(rowsPtrs.data(), colIdx.data(), values.data(), d_p.data(), d_Ap.data(), numRows); // to get Ax
 
         // calculate residual
-        auto r = axpy(-1.0, Ax, b);
-        auto p = r;
+        daxpy(d_Ap.data(), d_b.data(), d_r.data(), -1.0, numRows); // to get r=b-Ax
+        cudaMemcpy(d_p.data(), d_r.data(), numRows * sizeof(double), cudaMemcpyDeviceToDevice);
 
         for (auto k = 0; k < max_iter; ++k) { 
-            //upload
-            cudaMemcpy(d_p.data(), p.data(), numRows * sizeof(double), cudaMemcpyHostToDevice);
-
             //run kernel
             spmvCSR(rowsPtrs.data(), colIdx.data(), values.data(), d_p.data(), d_Ap.data(), numRows);
-            
-            //download a_Ap to host
-            std::vector<double> Ap(numRows);
-            cudaMemcpy(Ap.data(), d_Ap.data(), numRows * sizeof(double), cudaMemcpyDeviceToHost);
+            auto rr = launch_reduction(d_r.data(), d_r.data(), numRows, warpShuffleReductionKernel);
+            auto pAp = launch_reduction(d_p.data(), d_Ap.data(), numRows, warpShuffleReductionKernel);
 
-            
-            //CPU dot/axpy from before
-            double rr = dot(r, r);
-            auto alpha = rr / dot(p, Ap);
-            x = axpy(alpha, p, x);
-            auto r_new = axpy(-alpha, Ap, r);
+            auto alpha = rr / pAp;
 
+            daxpy(d_p.data(), d_x.data(), d_x.data(), alpha, numRows); // x = x + alpha * p
+            daxpy(d_Ap.data(), d_r.data(), d_r.data(), -alpha, numRows); // r = r - alpha * Ap
+
+            auto rr_new = launch_reduction(d_r.data(), d_r.data(), numRows, warpShuffleReductionKernel);
             std::cout << "CG iterations: " << k << "\n";
-            if (sqrt(dot(r_new,r_new)) < tol) break;
+            if (sqrt(rr_new) < tol) break;
 
-            auto beta = dot(r_new,r_new) / rr;
-            p = axpy(beta, p,r_new);
-            r = r_new;
+
+            auto beta = rr_new / rr;
+            daxpy(d_r.data(), d_p.data(), d_p.data(), beta, numRows); // p = r + beta * p
         }
+        cudaMemcpy(x.data(), d_x.data(), numRows * sizeof(double), cudaMemcpyDeviceToHost);
         return x;
     }
 }

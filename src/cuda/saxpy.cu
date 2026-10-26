@@ -26,7 +26,7 @@ namespace simcore::cuda {
         }
     }
 
-    void daxpy(CudaBuffer<double>& x, CudaBuffer<double>& y, CudaBuffer<double>& z, double a, int n) {
+    void daxpy(const double* x, const double* y, const double* z, double a, int n) {
         int threadsPerBlock = 256;
         int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
         daxpyKernel<<<blocksPerGrid, threadsPerBlock>>>(x.data(), y.data(), z.data(), a, n);
