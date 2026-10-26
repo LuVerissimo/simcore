@@ -21,9 +21,16 @@ Self-directed HPC and simulation: applied math + modern C++, in preparation for 
 | 11 | Rigid body dynamics, profiling and allocators | rigid-body sim core | done |
 | 12 | Capstone | `microphys` engine + live EKF | done |
 
+| **CUDA Extension Arc** | | | |
+| 15 | CUDA environment, RAII device buffer, SAXPY | first kernels + benchmark | done |
+| 16 | CSR SpMV, GPU CG solver | sparse solver on device | done |
+| 17 | Parallel reduction (3 variants), generic dispatch | dot product kernels | done |
+| 18 | GPU-resident CG, block sweep, ncu profiling | occupancy tuning | done |
+
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) for ownership, threading, and memory models.
+See [docs/cuda-arc.md](docs/cuda-arc.md) for CUDA extension details, benchmarks, and profiling results.
 
 ## Layout
 
@@ -80,4 +87,4 @@ Arena allocator 6x faster than default new/delete for per-frame contact data (10
 
 ## Built With
 
-C++20, GCC 13, CMake, doctest, AVX2 intrinsics, std::jthread, std::pmr, SPSC lock-free queue (hand-built)
+C++20, CUDA 12.8, GCC 13, CMake, doctest, AVX2 intrinsics, std::jthread, std::pmr, SPSC lock-free queue (hand-built), Nsight Compute
