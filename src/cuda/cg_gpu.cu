@@ -53,19 +53,22 @@ namespace simcore::cuda {
             //run kernel
             spmvCSR(rowsPtrs.data(), colIdx.data(), values.data(), d_p.data(), d_Ap.data(), numRows);
             auto rr = launch_reduction(d_r.data(), d_r.data(), numRows, warpShuffleReductionKernel);
+            if (k == 0) std::cout << "rr @ 0: " << rr << "\n";
             auto pAp = launch_reduction(d_p.data(), d_Ap.data(), numRows, warpShuffleReductionKernel);
 
             auto alpha = rr / pAp;
-
+            std::cout << "alpha: " << alpha << "\n";
+            
             daxpy(d_p.data(), d_x.data(), d_x.data(), alpha, numRows); // x = x + alpha * p
             daxpy(d_Ap.data(), d_r.data(), d_r.data(), -alpha, numRows); // r = r - alpha * Ap
-
+            
             auto rr_new = launch_reduction(d_r.data(), d_r.data(), numRows, warpShuffleReductionKernel);
             std::cout << "CG iterations: " << k << "\n";
             if (sqrt(rr_new) < tol) break;
-
-
+            
+            
             auto beta = rr_new / rr;
+            std::cout << "beta: " << beta << "\n";
             daxpy(d_r.data(), d_p.data(), d_p.data(), beta, numRows); // p = r + beta * p
         }
         cudaMemcpy(x.data(), d_x.data(), numRows * sizeof(double), cudaMemcpyDeviceToHost);
