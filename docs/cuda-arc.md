@@ -105,3 +105,36 @@ Benchmark (A100 40GB, kernel-only, 5-run average):
 Sequential beats shuffle at this block size (256) because without first-add-during-load coarsening, both do the same total work; sequential's simpler instruction mix wins. Peak bandwidth utilization: 74% of A100 theoretical (~1555 GB/s).
 
 All three pass compute-sanitizer with 0 errors. Not yet wired into CG solver; full GPU-resident CG (r, p, x, Ap kept on device) is prerequisite before reduction integration is useful.
+
+
+## Week 18: GPU-Resident CG & Kernel Tuning
+
+### GPU-Resident CG Refactor
+- Eliminated per-iteration host transfers in `solve_cg_gpu`
+- All vectors (`x`, `r`, `p`, `Ap`, `b`) as `CudaBuffer<double>` on device
+- Single upload at start, single download of solution at end
+- Three-operand `daxpy` kernel: `z[i] = a * x[i] + y[i]` (raw pointer signature)
+- Dot products via `launch_reduction` device-pointer overload
+- Bug found: p-update had `r` and `p` swapped in daxpy arguments, causing solver stall (beta ~1.0 every iteration, residual not decreasing)
+
+### Block Size Sweep (Warp Shuffle Reduction, N=100M, A100)
+
+| Block Size | Bandwidth (GB/s) | % Peak (2039) |
+|-----------|------------------|---------------|
+| 32        | 193              | 9.5%          |
+| 64        | 377              | 18.5%         |
+| 128       | 713              | 35.0%         |
+| 256       | 1433             | 70.3%         |
+| 512       | 1469             | 72.0%         |
+| 1024      | 1469             | 72.0%         |
+
+Knee at 256 threads/block. Below that, too few warps per block to hide memory latency. 256+ gives 8+ warps for the scheduler; no gain beyond that.
+
+### Occupancy vs Bandwidth Plot
+*(TODO)*
+
+### First ncu Profiling Session
+*(TODO)*
+
+### Reading
+- Kirk & Hwu Ch 12 (Merge Sort) and Ch 13 (Radix Sort) — completed
