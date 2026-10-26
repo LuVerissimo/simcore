@@ -69,7 +69,7 @@ namespace simcore::cuda {
             
             auto beta = rr_new / rr;
             std::cout << "beta: " << beta << "\n";
-            daxpy(d_r.data(), d_p.data(), d_p.data(), beta, numRows); // p = r + beta * p
+            daxpy(d_p.data(), d_r.data(), d_p.data(), beta, numRows); // p = r + beta * p
         }
         cudaMemcpy(x.data(), d_x.data(), numRows * sizeof(double), cudaMemcpyDeviceToHost);
         return x;
