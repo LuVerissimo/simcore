@@ -10,8 +10,30 @@ auto ms = [](auto a, auto b) {
     return std::chrono::duration<double, std::milli>(b-a).count();
 };
 
-void bench_reduction(ReductionKernelPtr kernel, size_t threadsPerBlock) {
+void bench_reduction(ReductionKernelPtr kernel, size_t threadsPerBlock, const cudaDeviceProp& prop) {
     using simcore::cuda::CudaBuffer;
+
+    
+    // speciffic occupany limits
+    int numBlocksPerSM = 0;
+    size_t sharedMemSize = 0;
+    if (kernel == warpShuffleReductionKernel) {
+        size_t warpsPerBlock = (threadsPerBlock + 31) / 32;
+        sharedMemSize = warpsPerBlock * sizeof(double);
+    } else {
+        sharedMemSize = threadsPerBlock * sizeof(double);
+    }
+
+    // query active blocks per SM
+    cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        &numBlocksPerSM, 
+        kernel, 
+        static_cast<int>(threadsPerBlock), 
+        sharedMemSize
+    );
+    double theoreticalOccupancy = (double)(numBlocksPerSM * threadsPerBlock) / prop.maxThreadsPerMultiProcessor;
+
+
     for (int n : {10'000'000, 100'000'000}) {
         double cpu_total = 0, gpu_total = 0, kernel_total_ms = 0;
         int runs = 5;
@@ -70,9 +92,8 @@ void bench_reduction(ReductionKernelPtr kernel, size_t threadsPerBlock) {
                 sharedMemSize = threadsPerBlock * sizeof(double);
             }
 
-             // Record start event on the GPU stream
+            // Record start event on the GPU stream
             cudaEventRecord(start);
-            
             kernel<<<blocksPerGrid, threadsPerBlock, sharedMemSize>>>(d_a.data(), d_b.data(), d_out.data(), n);
             
             // Record stop event right after execution tracking
@@ -88,14 +109,17 @@ void bench_reduction(ReductionKernelPtr kernel, size_t threadsPerBlock) {
         double gpu_avg = gpu_total / runs;
         
         double kernel_avg_seconds = (kernel_total_ms / runs) / 1000;
-        double bandwidth = 2 * n * sizeof(double) / (kernel_avg_seconds) / 1e9 ;
+        double bandwidth = 2.0 * n * sizeof(double) / (kernel_avg_seconds) / 1e9 ;
         
-        std::cout << "N=" << n
-                    << " CPU=" << cpu_avg << "ms"
-                    << " GPU(total)=" << gpu_avg << "ms"
-                    << " Kernel=" << kernel_avg_seconds << "s"
-                    << " Bandwidth=" << bandwidth << "GB/s\n";
+        // std::cout << "N=" << n
+        //             << " CPU=" << cpu_avg << "ms"
+        //             << " GPU(total)=" << gpu_avg << "ms"
+        //             << " Kernel=" << kernel_avg_seconds << "s"
+        //             << " Bandwidth=" << bandwidth << "GB/s\n";
 
+        // Structured CSV output string
+        std::cout << "DATA,N,BlockSize,Occupancy,Bandwidth_GBs\n";
+        std::cout << "DATA," << n << "," << threadsPerBlock << "," << theoreticalOccupancy << "," << bandwidth << "\n";
         // Cleanup events
         cudaEventDestroy(start);
         cudaEventDestroy(stop);
@@ -103,23 +127,25 @@ void bench_reduction(ReductionKernelPtr kernel, size_t threadsPerBlock) {
 }
 
 int main() {
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
 
-    // std::cout << "Running Naive" << "\n";
-    // bench_reduction(naiveReductionKernel); // naive
-    // std::cout << "Done Naive" << "\n";
+
+    std::cout << "=== GPU INFO ===\nDevice: " << prop.name << "\nMax Threads/SM: " << prop.maxThreadsPerMultiProcessor << "\n\n";
+
+    int minGridSize = 0;
+    int optimalBlockSize = 0;
+    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &optimalBlockSize, warpShuffleReductionKernel, 0, 0);
     
-    // std::cout << "\n";
+    std::cout << "Heuristic Optimal Block Size: " << optimalBlockSize << " threads per block\n";
+    std::cout << "Minimum Grid Size to Saturation: " << minGridSize << " blocks\n\n";
+
     
-    // bench_reduction(sequentialAddressingReductionKernel); // sequential addressing
-    // std::cout << "Done Sequential" << "\n";
-    
-    // std::cout << "\n";
-    
-    std::cout << "Starting Block Sweep" << "\n";
+    std::cout << "CSV_HEADER:N,BlockSize,TheoreticalOccupancy,BandwidthGBs\n";
+    std::cout << "Starting Block Sweep\n";
     for (size_t threadsPerBlock = 32; threadsPerBlock <= 1024; threadsPerBlock *= 2) {
         std::cout << "Starting WarpShuffle with \n=== Block Size: " << threadsPerBlock << " ===\n";
-        bench_reduction(warpShuffleReductionKernel, threadsPerBlock);
-        std::cout << "Done WarpShuffle" << "\n";
+        bench_reduction(warpShuffleReductionKernel, threadsPerBlock, prop);
     }
     std::cout << "Ending Block Sweep" << "\n";
     

@@ -34,13 +34,24 @@ CUDA (Lambda):
     cmake --build build-cuda
 
 ## Tests
-
     ./build-cuda/cuda_test_device_buffer
     ./build-cuda/cuda_test_saxpy
     ./build-cuda/cuda_test_vec3
     ./build-cuda/test_cg_gpu
     compute-sanitizer --tool memcheck ./build-cuda/cuda_test_saxpy
     compute-sanitizer --tool memcheck ./build-cuda/test_cg_gpu
+
+
+## Profiling with ncu
+    ncu --metrics sm__warps_active.avg.pct_of_peak_sustained_active,smsp__warps_active.avg.pct_of_peak_sustained_active ./your_compiled_benchmark
+
+- Nsight Compute will break down the statistics for every single kernel launched in your block sweep
+
+- sm__warps_active.avg.pct_of_peak_sustained_active is the real achieved occupany
+
+- If Achieved < Theoretical 
+    - kernel is bound by immediate instruction latencies or global memory cache misses
+    - Threads are blocking execution execution before subsequent warps can issue commands.
 
 ## Workflow
 
