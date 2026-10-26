@@ -158,7 +158,12 @@ Achieved occupancy via `sm__warps_active.avg.pct_of_peak_sustained_active` (N=10
 | 512       | 100%           | 82%               | 1469             |
 | 1024      | 100%           | 80%               | 1469             |
 
-Key finding: highest achieved occupancy (96% at 64 threads/block) does not produce highest bandwidth (377 GB/s). Peak bandwidth occurs at 256-1024 where achieved occupancy is 80-88%. Small blocks finish fast and keep warps rotating (high occupancy), but each block does less useful work per memory transaction. Larger blocks amortize per-block overhead through deeper reduction trees, even though fewer blocks are resident simultaneously.
+Key finding: 
+* highest achieved occupancy (96% at 64 threads/block) does not produce highest bandwidth (377 GB/s). 
+
+* Peak bandwidth occurs at 256-1024 where achieved occupancy is 80-88%. Small blocks finish fast and keep warps rotating (high occupancy), but each block does less useful work per memory transaction. 
+
+* Larger blocks amortize per-block overhead through deeper reduction trees, even though fewer blocks are resident simultaneously.
 
 ### Reading
 - Kirk & Hwu Ch 12 (Merge Sort) and Ch 13 (Radix Sort) — completed

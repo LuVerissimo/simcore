@@ -21,15 +21,21 @@ Self-directed HPC and simulation: applied math + modern C++, in preparation for 
 | 11 | Rigid body dynamics, profiling and allocators | rigid-body sim core | done |
 | 12 | Capstone | `microphys` engine + live EKF | done |
 
-| **CUDA Extension Arc** | | | |
+**CUDA Extension Arc** 
+
+| Week | Topic | Project | Status |
+|------|-------|---------|--------|
 | 15 | CUDA environment, RAII device buffer, SAXPY | first kernels + benchmark | done |
 | 16 | CSR SpMV, GPU CG solver | sparse solver on device | done |
 | 17 | Parallel reduction (3 variants), generic dispatch | dot product kernels | done |
 | 18 | GPU-resident CG, block sweep, ncu profiling | occupancy tuning | done |
 
+
+
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) for ownership, threading, and memory models.
+
 See [docs/cuda-arc.md](docs/cuda-arc.md) for CUDA extension details, benchmarks, and profiling results.
 
 ## Layout
@@ -84,6 +90,10 @@ Arena allocator 6x faster than default new/delete for per-frame contact data (10
 
 **Week 12 -- Capstone (microphys):**
 100 rigid bodies + 10K particles, spatial hash broadphase, body-body and body-particle impulse collisions with angular response, EKF observer via SPSC lock-free queue. 0.9ms/step (1,100 Hz), 18x under 60 Hz target. Single-threaded outperforms 4-thread pool at this scale (0.033 vs 0.087ms) due to task submission overhead.
+
+
+**CUDA Arc -- GPU-Resident CG and Occupancy Tuning (A100):**
+Warp shuffle reduction: 1469 GB/s peak (72% of A100 theoretical). Block size sweep (32-1024): highest achieved occupancy (96% at 64 threads/block) does NOT produce highest bandwidth (377 GB/s); peak bandwidth at 256-1024 with 80-88% achieved occupancy. GPU-resident CG solver (single upload/download, all vectors on device) matches CPU CG to 1e-10 on 100x100 2D Laplace.
 
 ## Built With
 
