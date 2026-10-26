@@ -15,7 +15,8 @@ namespace simcore::cuda {
         const std::vector<double>& b,
         std::vector<double> x,
         double tol,
-        int max_iter
+        int max_iter,
+        size_t threadsPerBlock
     ) {
         //generate host CSR matrix structure
         int numRows = A.rows;
@@ -52,9 +53,9 @@ namespace simcore::cuda {
         for (auto k = 0; k < max_iter; ++k) { 
             //run kernel
             spmvCSR(rowsPtrs.data(), colIdx.data(), values.data(), d_p.data(), d_Ap.data(), numRows);
-            auto rr = launch_reduction(d_r.data(), d_r.data(), numRows, warpShuffleReductionKernel);
+            auto rr = launch_reduction(d_r.data(), d_r.data(), numRows, threadsPerBlock, warpShuffleReductionKernel);
             if (k == 0) std::cout << "rr @ 0: " << rr << "\n";
-            auto pAp = launch_reduction(d_p.data(), d_Ap.data(), numRows, warpShuffleReductionKernel);
+            auto pAp = launch_reduction(d_p.data(), d_Ap.data(), numRows, threadsPerBlock, warpShuffleReductionKernel);
 
             auto alpha = rr / pAp;
             std::cout << "alpha: " << alpha << "\n";
@@ -62,7 +63,7 @@ namespace simcore::cuda {
             daxpy(d_p.data(), d_x.data(), d_x.data(), alpha, numRows); // x = x + alpha * p
             daxpy(d_Ap.data(), d_r.data(), d_r.data(), -alpha, numRows); // r = r - alpha * Ap
             
-            auto rr_new = launch_reduction(d_r.data(), d_r.data(), numRows, warpShuffleReductionKernel);
+            auto rr_new = launch_reduction(d_r.data(), d_r.data(), numRows, threadsPerBlock, warpShuffleReductionKernel);
             std::cout << "CG iterations: " << k << "\n";
             if (sqrt(rr_new) < tol) break;
             

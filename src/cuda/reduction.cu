@@ -61,22 +61,29 @@ __global__ void warpShuffleReductionKernel(const double* a,  const double* b, do
     unsigned int lane = tid % 32;
     unsigned int warpId = tid / 32;
 
+    //safe for any block size >= 32
     for (int offset = 16; offset > 0; offset /= 2) {
         val += __shfl_down_sync(0xffffffff, val, offset);
     }
 
     // write warp results to shared mem
-    if (lane == 0) sdata[warpId] = val;
+    if (lane == 0){
+        sdata[warpId] = val;
+    }
     __syncthreads();
 
     // final recution using first warp
+    unsigned int totalWarps = blockDim.x / 32;
+
     if (warpId == 0) {
-        unsigned int totalWarps = blockDim.x / 32;
         val = (lane < totalWarps) ? sdata[lane] : 0.0;
 
+        //safe for block size 32 <= block size <= 1024
         for (int offset = 16; offset > 0; offset /=2) {
             val += __shfl_down_sync(0xffffffff, val, offset);
         }
+
+        // single thread writes to accu
         if (tid == 0) {
             atomicAdd(output, val);
         }
@@ -88,7 +95,8 @@ namespace simcore::cuda {
 
     [[nodiscard]] double launch_reduction(
         const std::vector<double>& a, 
-        const std::vector<double>& b, 
+        const std::vector<double>& b,
+        size_t threadsPerBlock, 
         ReductionKernelPtr targetReductionKernel
     ) {
         if (a.size() != b.size()) throw std::invalid_argument("vec sizes aren't equal");
@@ -107,7 +115,6 @@ namespace simcore::cuda {
         cudaMemcpy(d_b.data(), b.data(), sizeBytes, cudaMemcpyHostToDevice);
         cudaMemcpy(d_out.data(), &h_out, sizeof(double), cudaMemcpyHostToDevice);
 
-        size_t threadsPerBlock = 256;
         size_t blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
         size_t sharedMemSize = threadsPerBlock * sizeof(double);
 
@@ -127,6 +134,7 @@ namespace simcore::cuda {
         const double* d_a, 
         const double* d_b, 
         int n,
+        size_t threadsPerBlock,
         ReductionKernelPtr targetReductionKernel
     ) {
         // device setup
@@ -134,7 +142,7 @@ namespace simcore::cuda {
         double h_out = 0.0;
         cudaMemcpy(d_out.data(), &h_out, sizeof(double), cudaMemcpyHostToDevice);
 
-        size_t threadsPerBlock = 256;
+        // Dynamic grid size
         size_t blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
         size_t sharedMemSize = 0;
         

@@ -8,6 +8,7 @@ namespace simcore::cuda {
         const std::vector<double>& b,
         std::vector<double> x,
         double tol = 1e-10,
-        int max_iter = 1000
+        int max_iter = 1000,
+        size_t threadsPerBlock = 256
     );
 }
